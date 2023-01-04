@@ -17,7 +17,7 @@ N <- c(10, 20, 50, 100, 200)
 PROP.MATCHED <- c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5)
 SIGMA.X <- c(1)
 SIGMA.Y <- c(1)
-REP <- 1:1000
+REP <- 1:2
 
 # register parallel backend
 cl <- detectCores() - 2
@@ -33,8 +33,8 @@ colnames(df_grid) <- c("Distribution", "Rho", "Delta", "N", "Prop.matched",
 n_datasets <- nrow(df_grid)
 cat("Simulating", n_datasets, "datasets using", cl, "cores...")
 
-# iterate over all datasets in parallel
-res <- foreach(i=1:n_datasets, .combine=rbind) %dorng%{
+# iterate over all datasets in parallel, compute estimates
+results <- foreach(i=1:n_datasets, .combine=rbind) %dorng%{
   
   # generate a dataset given a choice of parameters
   params <- df_grid[i, ]
@@ -51,12 +51,22 @@ res <- foreach(i=1:n_datasets, .combine=rbind) %dorng%{
   
   # setup
   n_matched <- floor(params$Prop.matched * params$N)
+  boot_res <- cor.boot(X, Y, n_matched)
   
   # estimate correlation using various methods
-  cor(X[1:n_matched], Y[1:n_matched])
+  rho_conserv <- cor.conserv(X, Y)
+  rho_matched <- cor.matched(X, Y, n_matched)
+  rho_boot_mean <- boot_res["mean"]
+  rho_boot_p5 <- boot_res["p5"]
+  rho_boot_p20 <- boot_res["p20"]
+  rho_emalg <- cor.emalg(X, Y, n_matched)
   
   # aggregate results
-  c(mean(X) - mean(Y))
+  # list("True.rho"=params$Rho, "Max.conserv"=rho_conserv,
+  #      "Matched"=rho_matched, "Boot.mean"=rho_boot_mean,
+  #      "Boot.p5"=rho_boot_p5, "Boot.p20"=rho_boot_p20,
+  #      "EM.alg"=rho_emalg)
+  c(rho_conserv, rho_matched, rho_boot_mean, rho_boot_p5, rho_boot_p20, rho_emalg)
 }
 
 
