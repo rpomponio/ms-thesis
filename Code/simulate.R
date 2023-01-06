@@ -34,9 +34,9 @@ n_datasets <- nrow(df_grid)
 cat("Simulating", n_datasets, "datasets using", cl, "cores...")
 
 # iterate over all datasets in parallel, compute estimates
-results <- foreach(i=1:n_datasets, .combine=rbind) %dorng%{
+results <- foreach(i=1:1000, .combine=rbind) %dorng%{
   
-  # generate a dataset given a choice of parameters
+  # generate a dataset given a parameter set
   params <- df_grid[i, ]
   S <- diag(2)
   diag(S) <- c(params$Sigma.X, params$Sigma.Y)
@@ -56,17 +56,26 @@ results <- foreach(i=1:n_datasets, .combine=rbind) %dorng%{
   # estimate correlation using various methods
   rho_conserv <- cor.conserv(X, Y)
   rho_matched <- cor.matched(X, Y, n_matched)
-  rho_boot_mean <- boot_res["mean"]
-  rho_boot_p5 <- boot_res["p5"]
-  rho_boot_p20 <- boot_res["p20"]
+  rho_boot_mean <- boot_res$mean
+  rho_boot_p5 <- boot_res$p5
+  rho_boot_p20 <- boot_res$p20
   rho_emalg <- cor.emalg(X, Y, n_matched)
   
   # aggregate results
-  # list("True.rho"=params$Rho, "Max.conserv"=rho_conserv,
-  #      "Matched"=rho_matched, "Boot.mean"=rho_boot_mean,
-  #      "Boot.p5"=rho_boot_p5, "Boot.p20"=rho_boot_p20,
-  #      "EM.alg"=rho_emalg)
-  c(rho_conserv, rho_matched, rho_boot_mean, rho_boot_p5, rho_boot_p20, rho_emalg)
+  list(
+    "Distribution"=params$Distribution,
+    "Rho"=params$Rho,
+    "Delta"=params$Delta,
+    "N"=params$N,
+    "Prop.matched"=params$Prop.matched,
+    "Sigma.X"=params$Sigma.X,
+    "Sigma.Y"=params$Sigma.Y,
+    "Repetition"=params$Repetition,
+    "Max.conserv"=rho_conserv,
+    "Matched"=rho_matched, "Boot.mean"=rho_boot_mean,
+    "Boot.p5"=rho_boot_p5, "Boot.p20"=rho_boot_p20,
+    "EM.alg"=rho_emalg)
+
 }
 
 

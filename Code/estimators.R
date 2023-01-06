@@ -25,14 +25,14 @@ cor.boot <- function(X, Y, n.matched, N.BOOT=9999, SEED=123) {
   set.seed(SEED)
   
   if (n.matched==0) {
-    return(NA)
+    return(list("mean"=NA, "p5"=NA, "p20"=NA, "p50"=NA))
   } else {
     rho.estimates <- rep(NA, N.BOOT)
     for (i in 1:N.BOOT){
       boot.indices <- sample(1:n.matched, replace=TRUE)
       X.boot <- X[boot.indices]
       Y.boot <- Y[boot.indices]
-      if (sd(X.boot)==0) {
+      if (is.na(sd(X.boot)) | sd(X.boot)==0) {
         rho.estimates[i] <- NA
       } else {
         rho.estimates[i] <- cor(X.boot, Y.boot)        
@@ -108,6 +108,11 @@ cor.emalg <- function(X, Y, n.matched, RHO.INIT=0, MAX.ITER=500) {
     if(rho.p2 > 1 | rho.p2 < (-1)){
       warning(paste0("Estimate of rho=", rho.p2, " in iteration:", n.iter))
     }
+    
+  }
+  
+  if(n.iter >= MAX.ITER){
+    warning("Reached maximum number of iterations.")
   }
   
   return(rho.p2)
