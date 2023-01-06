@@ -9,6 +9,8 @@ library(doParallel)
 library(doRNG)
 library(mvtnorm)
 
+source(here::here("Code/estimators.R"))
+
 # HARDCODED PARAMETERS
 DISTRIB <- c("Normal")
 RHO <- c(-0.9, -0.5, -0.25, 0, 0.25, 0.5, 0.9)
@@ -17,7 +19,7 @@ N <- c(10, 20, 50, 100, 200)
 PROP.MATCHED <- c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5)
 SIGMA.X <- c(1)
 SIGMA.Y <- c(1)
-REP <- 1:2
+# REP <- 1:10000
 
 # register parallel backend
 cl <- detectCores() - 2
@@ -34,7 +36,7 @@ n_datasets <- nrow(df_grid)
 cat("Simulating", n_datasets, "datasets using", cl, "cores...")
 
 # iterate over all datasets in parallel, compute estimates
-results <- foreach(i=1:1000, .combine=rbind) %dorng%{
+results <- foreach(i=1:n_datasets, .combine=rbind) %dorng%{
   
   # generate a dataset given a parameter set
   params <- df_grid[i, ]
@@ -60,6 +62,7 @@ results <- foreach(i=1:1000, .combine=rbind) %dorng%{
   rho_boot_p5 <- boot_res$p5
   rho_boot_p20 <- boot_res$p20
   rho_emalg <- cor.emalg(X, Y, n_matched)
+  rho_bayes_unif <- cor.bayesian.unif(X, Y, n_matched)
   
   # aggregate results
   list(
@@ -74,8 +77,7 @@ results <- foreach(i=1:1000, .combine=rbind) %dorng%{
     "Max.conserv"=rho_conserv,
     "Matched"=rho_matched, "Boot.mean"=rho_boot_mean,
     "Boot.p5"=rho_boot_p5, "Boot.p20"=rho_boot_p20,
-    "EM.alg"=rho_emalg)
-
+    "EM.alg"=rho_emalg, "Bayes.unif"=rho_bayes_unif)
 }
 
 
