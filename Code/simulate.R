@@ -16,8 +16,8 @@ source(here("Code/estimators.R"))
 DISTRIB <- c("Normal")
 RHO <- c(-0.9, -0.5, -0.25, 0, 0.25, 0.5, 0.9)
 DELTA <- c(0) ###c(0, 0.25, 0.5)
-N <- c(8) ###c(10, 20, 50, 100, 200)
-PROP.MATCHED <- c(1) ###c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5)
+N <- c(10) ###c(10, 20, 50, 100, 200)
+PROP.MATCHED <- c(0.3, 0.8, 1) ###c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5)
 SIGMA.X <- c(1)
 SIGMA.Y <- c(1)
 REP <- 1:10000
@@ -36,9 +36,8 @@ colnames(df_grid) <- c("Distribution", "Rho", "Delta", "N", "Prop.matched",
 n_datasets <- nrow(df_grid)
 cat("Simulating", n_datasets, "datasets using", cl, "cores...")
 
-time_start <- proc.time()
-
 # iterate over all datasets in parallel, compute estimates
+time_start <- proc.time()
 results <- foreach(i=1:n_datasets, .combine=rbind) %dorng%{
   
   # generate a dataset given a parameter set
@@ -82,7 +81,6 @@ results <- foreach(i=1:n_datasets, .combine=rbind) %dorng%{
     "Bayes.unif"         = est.cor.bayesian.unif(X, Y, n_matched)
     )
 }
-
 time_elapsed <- proc.time() - time_start
 
 # save to file

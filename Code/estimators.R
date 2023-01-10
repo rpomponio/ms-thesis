@@ -38,9 +38,9 @@ est.cor.shrunken <- function(X, Y, n.matched) {
   }
 }
 
-# compute "unbiased" correlation of matched samples
+# compute "unbiased" correlation of matched samples (requires >3 samples)
 est.cor.unbiased <- function(X, Y, n.matched) {
-  if (n.matched==0) {
+  if (n.matched <= 3) {
     return(NA)
   } else {
     r <- cor(X[1:n.matched], Y[1:n.matched])
@@ -48,9 +48,9 @@ est.cor.unbiased <- function(X, Y, n.matched) {
   }
 }
 
-# compute 20th quantile estimate of matched samples (requires 3 samples)
+# compute 20th quantile estimate of matched samples (requires >3 samples)
 est.cor.quantile <- function(X, Y, n.matched, q=0.2) {
-  if (n.matched < 3) {
+  if (n.matched <= 3) {
     return(NA)
   } else {
     test_res <- cor.test(X[1:n.matched], Y[1:n.matched],
