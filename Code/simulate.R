@@ -61,7 +61,7 @@ results <- foreach(i=1:n_datasets, .combine=rbind) %dorng%{
   # estimate correlation using various methods and aggregate results
   list(
     "Repetition"=params$Repetition,
-    "Distribution"=as.character(params$Distribution),
+    "Distribution"=as.numeric(params$Distribution),
     "Rho"=params$Rho,
     "Delta"=params$Delta,
     "Sigma.X"=params$Sigma.X,
@@ -87,7 +87,10 @@ time_elapsed <- proc.time() - time_start
 
 # save to file
 sys_date <- gsub(" \\d+:\\d+:\\d+", "", Sys.time())
-saveRDS(results, here("DataRaw", paste0("simulation_results_", sys_date, ".rds")))
+saveRDS(
+  data.matrix(as.data.frame(results, row.names=F)),
+  here("DataRaw", paste0("simulation_results_", sys_date, ".rds"))
+  )
 
 # print to signal completion
 cat("Completed in", time_elapsed[3], "seconds.")
