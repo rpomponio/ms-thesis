@@ -114,7 +114,7 @@ est.cor.emalg <- function(X, Y, n.matched, RHO.INIT=0, MAX.ITER=500) {
   } else {
     # @Ryan: is it correct to assume the cross product is zero?
     crossprod.obs <- 0
-  }
+  } 
   
   # compute MLES of mu, sigma
   mu.X <- sum(X) / n
@@ -123,11 +123,13 @@ est.cor.emalg <- function(X, Y, n.matched, RHO.INIT=0, MAX.ITER=500) {
   sigma.Y <- sqrt( sum((Y - mu.Y) ^2) / n )
   
   # MLEs of mu and sigma found on unmatched samples, only
-  mu.X.unmatched <- sum(X.unmatched) / n.unmatched
-  mu.Y.unmatched <- sum(Y.unmatched) / n.unmatched
-  sigma.X.unmatched <- sqrt( sum((X.unmatched - mu.X.unmatched) ^2) / n.unmatched )
-  sigma.Y.unmatched <- sqrt( sum((Y.unmatched - mu.Y.unmatched) ^2) / n.unmatched )
-  
+  if (n.matched < n) {
+    mu.X.unmatched <- sum(X.unmatched) / n.unmatched
+    mu.Y.unmatched <- sum(Y.unmatched) / n.unmatched
+    sigma.X.unmatched <- sqrt( sum((X.unmatched - mu.X.unmatched) ^2) / n.unmatched )
+    sigma.Y.unmatched <- sqrt( sum((Y.unmatched - mu.Y.unmatched) ^2) / n.unmatched )
+  }
+
   # initialize starting value(s) of rho
   rho.p <- -2
   rho.p2 <- RHO.INIT
@@ -139,9 +141,13 @@ est.cor.emalg <- function(X, Y, n.matched, RHO.INIT=0, MAX.ITER=500) {
     n.iter <- n.iter + 1
     rho.p <- rho.p2
     # e-step (unobserved cross product of X, Y)
-    crossprod.unobs <- sum(
-      rho.p * sigma.X.unmatched * sigma.Y.unmatched,
-      mu.X.unmatched * mu.Y.unmatched) * n.unmatched
+    if (n.matched < n) {
+      crossprod.unobs <- sum(
+        rho.p * sigma.X.unmatched * sigma.Y.unmatched,
+        mu.X.unmatched * mu.Y.unmatched) * n.unmatched
+    } else {
+      crossprod.unobs <- 0
+    }
     # crossprod augmented includes both observed and unobserved cases
     crossprod.aug <- crossprod.obs + crossprod.unobs
     # m-step (conditional MLE of rho given partially observed data)
