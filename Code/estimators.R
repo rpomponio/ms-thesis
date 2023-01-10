@@ -11,7 +11,7 @@ source(here::here("Code/helpers.R"))
 # All estimators must take vectors X, Y as arguments
 # Optionally, an estimator may take n.matched as an argument
 #
-# All estimators must return a scalar (or list of scalers) or NA values
+# All estimators must return a scalar (or list of scalars), or NA value(s)
 #
 
 # compute maximally-conservative estimate of correlation
@@ -28,21 +28,36 @@ est.cor.matched <- function(X, Y, n.matched) {
   }
 }
 
-# compute shrunken correlation of matched samples
+# compute "shrunken" correlation of matched samples
 est.cor.shrunken <- function(X, Y, n.matched) {
-  
+  if (n.matched==0) {
+    return(NA)
+  } else {
+    r <- cor(X[1:n.matched], Y[1:n.matched])
+    return(sign(r) * sqrt(abs((1 - (1-r^2) * ((n.matched - 1)/(n.matched - 2))))))
+  }
 }
 
 # compute "unbiased" correlation of matched samples
 est.cor.unbiased <- function(X, Y, n.matched) {
-  
+  if (n.matched==0) {
+    return(NA)
+  } else {
+    r <- cor(X[1:n.matched], Y[1:n.matched])
+    return(r * (1  + (1 - r^2) / (2 * (n.matched - 3))))
+  }
 }
 
-# compute 20th quantile estimate of matched samples
-est.cor.q.20 <- function(X, Y, n.matched) {
-  
+# compute 20th quantile estimate of matched samples (requires 3 samples)
+est.cor.quantile <- function(X, Y, n.matched, q=0.2) {
+  if (n.matched < 3) {
+    return(NA)
+  } else {
+    test_res <- cor.test(X[1:n.matched], Y[1:n.matched],
+                         alternative="greater", conf.level=(1 - q))
+    return(test_res$conf.int[1])
+  }
 }
-
 
 # compute bootstrap-based correlation estimate(s)
 cor.boot <- function(X, Y, n.matched, N.BOOT=9999, SEED=123) {
@@ -50,7 +65,7 @@ cor.boot <- function(X, Y, n.matched, N.BOOT=9999, SEED=123) {
   set.seed(SEED)
   
   if (n.matched==0) {
-    return(list("mean"=NA, "p5"=NA, "p20"=NA, "p50"=NA))
+    return(list("mean"=NA, "q.05"=NA, "q.20"=NA, "q.50"=NA))
   } else {
     rho.estimates <- rep(NA, N.BOOT)
     for (i in 1:N.BOOT){
@@ -66,19 +81,20 @@ cor.boot <- function(X, Y, n.matched, N.BOOT=9999, SEED=123) {
     
     # @Ryan: how to handle cases where correlation can't be estimated?
     if (mean(is.na(rho.estimates)) > 0.1){
-      rho.p5 <- NA
-      rho.p20 <- NA
-      rho.p50 <- NA
+      rho.q.05 <- NA
+      rho.q.20 <- NA
+      rho.q.50 <- NA
       rho.mean <- NA
+      warning("Ten or more percent of bootstrap iterations failed.")
     } else {
-      rho.p5 <- quantile(rho.estimates, 0.05, na.rm=TRUE)
-      rho.p20 <- quantile(rho.estimates, 0.20, na.rm=TRUE)
-      rho.p50 <- quantile(rho.estimates, 0.50, na.rm=TRUE)
+      rho.q.05 <- quantile(rho.estimates, 0.05, na.rm=TRUE)
+      rho.q.20 <- quantile(rho.estimates, 0.20, na.rm=TRUE)
+      rho.q.50 <- quantile(rho.estimates, 0.50, na.rm=TRUE)
       rho.mean <- mean(rho.estimates, na.rm=TRUE)
     }
     
-    return(list("mean"=rho.mean, "p5"=unname(rho.p5),
-                "p20"=unname(rho.p20), "p50"=unname(rho.p50)))
+    return(list("mean"=rho.mean, "q.05"=unname(rho.q.05),
+                "q.20"=unname(rho.q.20), "q.50"=unname(rho.q.50)))
   }
 }
 
@@ -133,9 +149,7 @@ est.cor.emalg <- function(X, Y, n.matched, RHO.INIT=0, MAX.ITER=500) {
     if(rho.p2 > 1 | rho.p2 < (-1)){
       warning(paste0("Estimate of rho=", rho.p2, " in iteration:", n.iter))
     }
-    
   }
-  
   if(n.iter >= MAX.ITER){
     warning("Reached maximum number of iterations.")
   }

@@ -8,8 +8,9 @@
 library(doParallel)
 library(doRNG)
 library(mvtnorm)
+library(here)
 
-source(here::here("Code/estimators.R"))
+source(here("Code/estimators.R"))
 
 # HARDCODED PARAMETERS
 DISTRIB <- c("Normal")
@@ -19,7 +20,7 @@ N <- c(10, 20, 50, 100, 200)
 PROP.MATCHED <- c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5)
 SIGMA.X <- c(1)
 SIGMA.Y <- c(1)
-REP <- 1:10
+REP <- 1:1
 
 # register parallel backend
 cl <- detectCores() - 2
@@ -55,30 +56,31 @@ results <- foreach(i=1:n_datasets, .combine=rbind) %dorng%{
   n_matched <- floor(params$Prop.matched * params$N)
   boot_res <- cor.boot(X, Y, n_matched)
   
-  # estimate correlation using various methods
-  rho_conserv <- cor.conserv(X, Y)
-  rho_matched <- cor.matched(X, Y, n_matched)
-  rho_boot_mean <- boot_res$mean
-  rho_boot_p5 <- boot_res$p5
-  rho_boot_p20 <- boot_res$p20
-  rho_emalg <- cor.emalg(X, Y, n_matched)
-  rho_bayes_unif <- cor.bayesian.unif(X, Y, n_matched)
-  
   # estimate correlation using various methods and aggregate results
   list(
+    "Repetition"=params$Repetition,
     "Distribution"=params$Distribution,
     "Rho"=params$Rho,
     "Delta"=params$Delta,
-    "N"=params$N,
-    "Prop.matched"=params$Prop.matched,
     "Sigma.X"=params$Sigma.X,
     "Sigma.Y"=params$Sigma.Y,
-    "Repetition"=params$Repetition,
-    "Max.conserv"=rho_conserv,
-    "Matched"=rho_matched, "Boot.mean"=rho_boot_mean,
-    "Boot.p5"=rho_boot_p5, "Boot.p20"=rho_boot_p20,
-    "EM.alg"=rho_emalg, "Bayes.unif"=rho_bayes_unif)
+    "N"=params$N,
+    "M"=n_matched,
+    "Prop.matched"=params$Prop.matched,
+    # include all estimators below this line:
+    "Max.conserv"        = est.cor.conserv(X, Y),
+    "Matched"            = est.cor.matched(X, Y, n_matched),
+    "Shrunken"           = est.cor.shrunken(X, Y, n_matched),
+    "Unbiased"           = est.cor.unbiased(X, Y, n_matched),
+    "20th.quantile"      = est.cor.quantile(X, Y, n_matched, q=0.2),
+    "Boot.mean"          = boot_res$mean,
+    "Boot.5th.quantile"  = boot_res$q.05,
+    "Boot.20th.quantile" = boot_res$q.20,
+    "EM.alg"             = est.cor.emalg(X, Y, n_matched),
+    "Bayes.unif"         = est.cor.bayesian.unif(X, Y, n_matched)
+    )
 }
 
-
-
+# save to file
+sys_date <- gsub(" \\d+:\\d+:\\d+", "", Sys.time())
+saveRDS(results, here("DataRaw", paste0("simulation_results_", sys_date, ".rds")))
