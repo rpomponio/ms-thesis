@@ -1,5 +1,5 @@
 ################################################### -
-## Title: Script to run simulation
+## Title: Script to run simulation (in parallel)
 ## Author: Ray Pomponio
 ## Email: raymond.pomponio@cuanschutz.edu
 ## Date Created: 2023-01-04
@@ -19,7 +19,7 @@ N <- c(10, 20, 50, 100, 200)
 PROP.MATCHED <- c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5)
 SIGMA.X <- c(1)
 SIGMA.Y <- c(1)
-# REP <- 1:10000
+REP <- 1:10
 
 # register parallel backend
 cl <- detectCores() - 2
@@ -42,7 +42,7 @@ results <- foreach(i=1:n_datasets, .combine=rbind) %dorng%{
   params <- df_grid[i, ]
   S <- diag(2)
   diag(S) <- c(params$Sigma.X, params$Sigma.Y)
-  S[upper.tri(S) | lower.tri(S)] <- rep(params$Rho) * prod(params$Sigma.X, params$Sigma.Y)
+  S[upper.tri(S) | lower.tri(S)] <- rep(params$Rho) * params$Sigma.X * params$Sigma.Y
   sim_mat <- rmvnorm(
     n=params$N,
     mean=c(0, params$Delta),
@@ -64,7 +64,7 @@ results <- foreach(i=1:n_datasets, .combine=rbind) %dorng%{
   rho_emalg <- cor.emalg(X, Y, n_matched)
   rho_bayes_unif <- cor.bayesian.unif(X, Y, n_matched)
   
-  # aggregate results
+  # estimate correlation using various methods and aggregate results
   list(
     "Distribution"=params$Distribution,
     "Rho"=params$Rho,
