@@ -20,8 +20,8 @@ est.cor.conserv <- function(X, Y) {
 }
 
 # compute sample correlation of matched samples
-est.cor.matched <- function(X, Y, n.matched) {
-  if (n.matched==0) {
+est.cor.pearson <- function(X, Y, n.matched) {
+  if (n.matched <= 1) {
     return(NA)
   } else {
     return(cor(X[1:n.matched], Y[1:n.matched]))
@@ -30,7 +30,7 @@ est.cor.matched <- function(X, Y, n.matched) {
 
 # compute "shrunken" correlation of matched samples
 est.cor.shrunken <- function(X, Y, n.matched) {
-  if (n.matched==0) {
+  if (n.matched <= 1) {
     return(NA)
   } else {
     r <- cor(X[1:n.matched], Y[1:n.matched])
@@ -64,7 +64,7 @@ cor.boot <- function(X, Y, n.matched, N.BOOT=9999, SEED=123) {
   
   set.seed(SEED)
   
-  if (n.matched==0) {
+  if (n.matched <= 1) {
     return(list("mean"=NA, "q.05"=NA, "q.20"=NA, "q.50"=NA))
   } else {
     rho.estimates <- rep(NA, N.BOOT)
@@ -72,7 +72,7 @@ cor.boot <- function(X, Y, n.matched, N.BOOT=9999, SEED=123) {
       boot.indices <- sample(1:n.matched, replace=TRUE)
       X.boot <- X[boot.indices]
       Y.boot <- Y[boot.indices]
-      if (is.na(sd(X.boot)) | sd(X.boot)==0) {
+      if (sd(X.boot)==0 | sd(Y.boot)==0) {
         rho.estimates[i] <- NA
       } else {
         rho.estimates[i] <- cor(X.boot, Y.boot)        
@@ -162,20 +162,80 @@ est.cor.emalg <- function(X, Y, n.matched, RHO.INIT=0, MAX.ITER=500) {
   return(rho.p2)
 }
 
-# wrapper for computing bayesian estimate with uniform prior
+# compute bayesian estimate with uniform prior
 est.cor.bayesian.unif <- function(X, Y, n.matched) {
-  SS.X <- sum(X[1:n.matched]^2)
-  SS.Y <- sum(Y[1:n.matched]^2)
-  SS.XY <- sum(X[1:n.matched] * Y[1:n.matched])
-  
-  if (n.matched==0) {
+  if (n.matched == 0) {
     return(NA)
   } else {
-    return(unif.cor.est(SS.XY, SS.X, SS.Y, n=n.matched))
+    # first standardize data, per @Bailey's suggestion
+    X <- (X - mean(X)) / sd(X)
+    Y <- (Y - mean(Y)) / sd(Y)
+    
+    # compute sum of squares for matched sample
+    SS.X <- sum(X[1:n.matched]^2)
+    SS.Y <- sum(Y[1:n.matched]^2)
+    SS.XY <- sum(X[1:n.matched] * Y[1:n.matched])
+    
+    rho.estimate <- tryCatch(
+      { unif.cor.est(SS.XY, SS.X, SS.Y, n=n.matched) },
+      error=function(cond){
+        warning(paste0("Bayesian estimation failed, original error:", cond))
+        return(NA)
+      }
+    )
+    return(rho.estimate)
+  }
+}
+
+# compute bayesian estimate with jeffreys prior
+est.cor.bayesian.jeff <- function(X, Y, n.matched) {
+  if (n.matched == 0) {
+    return(NA)
+  } else {
+    # first standardize data, per @Bailey's suggestion
+    X <- (X - mean(X)) / sd(X)
+    Y <- (Y - mean(Y)) / sd(Y)
+    
+    # compute sum of squares for matched sample
+    SS.X <- sum(X[1:n.matched]^2)
+    SS.Y <- sum(Y[1:n.matched]^2)
+    SS.XY <- sum(X[1:n.matched] * Y[1:n.matched])
+    
+    rho.estimate <- tryCatch(
+      { jeff.cor.est(SS.XY, SS.X, SS.Y, n=n.matched) },
+      error=function(cond){
+        warning(paste0("Bayesian estimation failed, original error:", cond))
+        return(NA)
+      }
+    )
+    return(rho.estimate)
   }
 }
 
 
-
+# compute bayesian estimate with arcsine prior
+est.cor.bayesian.asin <- function(X, Y, n.matched) {
+  if (n.matched == 0) {
+    return(NA)
+  } else {
+    # first standardize data, per @Bailey's suggestion
+    X <- (X - mean(X)) / sd(X)
+    Y <- (Y - mean(Y)) / sd(Y)
+    
+    # compute sum of squares for matched sample
+    SS.X <- sum(X[1:n.matched]^2)
+    SS.Y <- sum(Y[1:n.matched]^2)
+    SS.XY <- sum(X[1:n.matched] * Y[1:n.matched])
+    
+    rho.estimate <- tryCatch(
+      { arcsine.cor.est(SS.XY, SS.X, SS.Y, n=n.matched) },
+      error=function(cond){
+        warning(paste0("Bayesian estimation failed, original error:", cond))
+        return(NA)
+      }
+    )
+    return(rho.estimate)
+  }
+}
 
 
