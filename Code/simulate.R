@@ -38,7 +38,8 @@ cat("Simulating", n_datasets, "datasets using", cl, "cores...")
 
 # iterate over all datasets in parallel, compute estimates
 time_start <- proc.time()
-results <- foreach(i=1:n_datasets, .combine=rbind) %dorng%{
+results <- foreach(i=1:n_datasets, .combine=rbind,
+                   .packages="mvtnorm") %dorng%{
   
   # generate a dataset given a parameter set
   params <- df_grid[i, ]
