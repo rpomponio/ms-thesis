@@ -20,7 +20,7 @@ N <- c(10, 20, 50, 100, 200)
 PROP.MATCHED <- c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5, 1)
 SIGMA.X <- c(1)
 SIGMA.Y <- c(1)
-REP <- 1:10000
+REP <- 1:1000
 
 # register parallel backend
 cl <- detectCores() - 2
@@ -36,10 +36,13 @@ colnames(df_grid) <- c("Distribution", "Rho", "Delta", "N", "Prop.matched",
 n_datasets <- nrow(df_grid)
 cat("Simulating", n_datasets, "datasets using", cl, "cores...")
 
+# new: define variables to "export" to each parallel thread
+my_functions <- as.vector(lsf.str())
+
 # iterate over all datasets in parallel, compute estimates
 time_start <- proc.time()
-results <- foreach(i=1:n_datasets, .combine=rbind,
-                   .packages="mvtnorm") %dorng%{
+results <- foreach(i=1:n_datasets, .combine=rbind, .inorder=FALSE,
+                   .packages="mvtnorm", .export=my_functions) %dorng%{
   
   # generate a dataset given a parameter set
   params <- df_grid[i, ]
