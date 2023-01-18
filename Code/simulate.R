@@ -13,7 +13,7 @@ library(here)
 source(here("Code/estimators.R"))
 
 # HARDCODED PARAMETERS
-DISTRIB <- c("Continuous", "Ordinal")
+DISTRIB <- c("Continuous") ###c("Continuous", "Ordinal")
 RHO <- c(-0.9, -0.5, -0.25, 0, 0.25, 0.5, 0.9)
 DELTA <- c(0, 0.25, 0.5)
 N <- c(10, 20, 50, 100, 200)
