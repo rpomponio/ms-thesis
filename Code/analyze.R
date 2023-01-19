@@ -9,7 +9,7 @@ library(tidyverse)
 library(here)
 
 # load previously-saved results
-results <- readRDS(here("DataRaw/simulation_results_2023-01-10.rds"))
+results <- readRDS(here("DataRaw/simulation_results_2023-01-18.rds"))
 
 # create "error" matrix
 errors <- results[, 10:16] - results[, "Rho"]
