@@ -13,14 +13,14 @@ library(here)
 source(here("Code/estimators.R"))
 
 # HARDCODED PARAMETERS
-DISTRIB <- c("Ordinal") ###c("Continuous", "Ordinal")
-RHO <- c(0) ###c(-0.9, -0.5, -0.25, 0, 0.25, 0.5, 0.9)
-DELTA <- c(0) ###c(0, 0.25, 0.5)
+DISTRIB <- c("Continuous", "Ordinal")
+RHO <- c(-0.9, -0.5, -0.25, 0, 0.25, 0.5, 0.9)
+DELTA <- c(0, 0.25, 0.5)
 N <- c(10, 20, 50, 100, 200)
-PROP.MATCHED <- c(1)###c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5, 1)
+PROP.MATCHED <- c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5, 1)
 SIGMA.X <- c(1)
 SIGMA.Y <- c(1)
-REP <- 1:100
+REP <- 1:1000
 
 # register parallel backend
 cl <- detectCores() - 2
@@ -68,6 +68,14 @@ results <- foreach(i=1:n_datasets, .combine=rbind, .inorder=FALSE,
   n_matched <- floor(params$Prop.matched * params$N)
   boot_res <- cor.boot(X, Y, n_matched)
   
+  # @Ryan: temporary fix for zero-variance datasets
+  if (sd(X)==0) {
+    X[1] <- X[1] + min(1, 6 - X[1])
+  }
+  if (sd(Y)==0) {
+    Y[1] <- Y[1] + min(1, 6 - Y[1])
+  } 
+  
   # MLEs of mu and sigma found using X, Y separately
   mu_X <- sum(X) / params$N
   mu_Y <- sum(Y) / params$N
@@ -103,7 +111,7 @@ results <- foreach(i=1:n_datasets, .combine=rbind, .inorder=FALSE,
     "EM.alg"             = est.cor.emalg(X, Y, n_matched),
     "Bayes.unif"         = est.cor.bayesian.unif(X, Y, n_matched),
     "Bayes.Jeffreys"     = est.cor.bayesian.jeff(X, Y, n_matched),
-    "Bayes.Arcsine"      = est.cor.bayesian.asin(X, Y, n_matched)
+    "Bayes.arcsine"      = est.cor.bayesian.asin(X, Y, n_matched)
     )
 }
 time_elapsed <- proc.time() - time_start

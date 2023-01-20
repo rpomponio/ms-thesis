@@ -129,7 +129,7 @@ est.cor.emalg <- function(X, Y, n.matched, RHO.INIT=0, MAX.ITER=500) {
     sigma.X.unmatched <- sqrt( sum((X.unmatched - mu.X.unmatched) ^2) / n.unmatched )
     sigma.Y.unmatched <- sqrt( sum((Y.unmatched - mu.Y.unmatched) ^2) / n.unmatched )
   }
-
+  
   # initialize starting value(s) of rho
   rho.p <- -2
   rho.p2 <- RHO.INIT
@@ -137,6 +137,7 @@ est.cor.emalg <- function(X, Y, n.matched, RHO.INIT=0, MAX.ITER=500) {
   # define convergence criterion as difference in estimates of rho
   n.iter <- 0
   eps <- 1e-5
+
   while(abs(rho.p - rho.p2) >= eps & n.iter <= MAX.ITER) {
     n.iter <- n.iter + 1
     rho.p <- rho.p2
