@@ -13,14 +13,14 @@ library(here)
 source(here("Code/estimators.R"))
 
 # HARDCODED PARAMETERS
-DISTRIB <- c("Continuous") ###c("Continuous", "Ordinal")
-RHO <- c(-0.9, -0.5, -0.25, 0, 0.25, 0.5, 0.9)
-DELTA <- c(0, 0.25, 0.5)
+DISTRIB <- c("Ordinal") ###c("Continuous", "Ordinal")
+RHO <- c(0) ###c(-0.9, -0.5, -0.25, 0, 0.25, 0.5, 0.9)
+DELTA <- c(0) ###c(0, 0.25, 0.5)
 N <- c(10, 20, 50, 100, 200)
-PROP.MATCHED <- c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5, 1)
+PROP.MATCHED <- c(1)###c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5, 1)
 SIGMA.X <- c(1)
 SIGMA.Y <- c(1)
-REP <- 1:1000
+REP <- 1:100
 
 # register parallel backend
 cl <- detectCores() - 2
@@ -59,7 +59,7 @@ results <- foreach(i=1:n_datasets, .combine=rbind, .inorder=FALSE,
   
   # if ordinal: cut to integers from 1 to 7
   if (params$Distribution=="Ordinal") {
-    cut_seq <- c(-999, seq(-2, 2, length.out=6), 999)
+    cut_seq <- c(-999, c(-2, 1, 0, 0.7, 1.3, 2.0), 999)
     X <- as.numeric(cut(X, cut_seq))
     Y <- as.numeric(cut(Y, cut_seq))
   }
