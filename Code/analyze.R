@@ -5,34 +5,57 @@
 ## Date Created: 2023-01-10
 ################################################### -
 
-library(tidyverse)
+options(stringsAsFactors=FALSE)
+library(dplyr, warn.conflicts=FALSE)
+options(dplyr.summarise.inform=FALSE)
+library(tidyr)
+library(ggplot2)
+theme_set(ggpubr::theme_classic2(base_size=12))
 library(here)
 
 # load previously-saved results
 results <- readRDS(here("DataRaw/simulation_results_2023-01-18.rds"))
 
 # create "error" matrix
-errors <- results[, 10:16] - results[, "Rho"]
+errors <- results[, 15:26] - results[, "Rho"]
 
 # calculate average error, or "bias", and mean squared error
-df_perf_by_method <- data.frame(errors) %>%
-  bind_cols(select(data.frame(results), Rho, M)) %>%
-  pivot_longer(cols=Max.conserv:Bayes.unif, names_to="Method") %>%
-  group_by(M, Rho, Method) %>%
+df_performance <- data.frame(errors) %>%
+  bind_cols(select(data.frame(results), Distribution:M)) %>%
+  pivot_longer(cols=Max.conserv:Bayes.Arcsine, names_to="Method") %>%
+  group_by(Method, Distribution, Rho, Delta, N, M) %>%
   summarise(Bias=mean(value), Mean.sqd.error=mean(value^2))
     
 # plot bias as a function of true correlation
-df_perf_by_method %>%
-  filter(! Method %in% c("Max.conserv", "Bayes.unif")) %>%
+df_performance %>%
+  filter(Method %in% c("EM.alg", "Bayes.unif", "Boot.20th.quantile",
+                       "Freq.20th.quantile", "Pearson", "Unbiased"),
+         Delta==0, N==10, M %in% 0:10) %>%
   ggplot(aes(col=Method, x=Rho, y=Bias)) +
-  facet_wrap(~ M) +
-  geom_line()
+  geom_hline(yintercept=0, linetype="dashed") +
+  facet_wrap(~ M, scales="free_y") +
+  geom_line() +
+  geom_point() +
+  scale_x_continuous(breaks=unique(df_performance$Rho)) +
+  labs(title="Bias of estimators by number of matched samples (0 to 10)",
+       subtitle="Measured by mean difference (in all cases N=10, delta=0)",
+       x="True correlation",
+       caption="Dotted line indicates unbiased estimate.")
+
+ggsave(filename="~/Downloads/Sim_Results_Bias.png", width=10.5, height=7.5)
 
 # plot MSE as a function of true correlation
-df_perf_by_method %>%
-  filter(! Method %in% c("Max.conserv", "Bayes.unif")) %>%
+df_performance %>%
+  filter(Method %in% c("EM.alg", "Bayes.unif", "Boot.20th.quantile",
+                       "Freq.20th.quantile", "Pearson", "Unbiased"),
+         Delta==0, N==10, M %in% 0:10) %>%
   ggplot(aes(col=Method, x=Rho, y=Mean.sqd.error)) +
-  facet_wrap(~ M) +
-  geom_line()
+  facet_wrap(~ M, scales="free_y") +
+  geom_line() +
+  geom_point() +
+  scale_x_continuous(breaks=unique(df_performance$Rho)) +
+  labs(title="Variance of estimators by number of matched samples (0 to 10)",
+       subtitle="Measured by Mean Sqd. Error (in all cases N=10, delta=0)",
+       x="True correlation")
 
-
+ggsave(filename="~/Downloads/Sim_Results_Variance.png", width=10.5, height=7.5)
