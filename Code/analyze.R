@@ -28,34 +28,36 @@ df_performance <- data.frame(errors) %>%
     
 # plot bias as a function of true correlation
 df_performance %>%
-  filter(Method %in% c("EM.alg", "Bayes.unif", "Boot.20th.quantile",
-                       "Freq.20th.quantile", "Pearson", "Unbiased"),
-         Delta==0, N==10, M %in% 0:10) %>%
+  filter(Method %in% c("EM.alg", "Bayes.unif", "Bayes.Jeffreys",
+                       "Bayes.Arcsine", "Pearson"),
+         Delta==0, N==50, M %in% 0:15) %>%
   ggplot(aes(col=Method, x=Rho, y=Bias)) +
   geom_hline(yintercept=0, linetype="dashed") +
   facet_wrap(~ M, scales="free_y") +
   geom_line() +
   geom_point() +
   scale_x_continuous(breaks=unique(df_performance$Rho)) +
-  labs(title="Bias of estimators by number of matched samples (0 to 10)",
-       subtitle="Measured by mean difference (in all cases N=10, delta=0)",
+  labs(title="Bias of estimators by number of matched samples (0 to 15)",
+       subtitle="Measured by mean difference (in all cases total sample size was 50)",
        x="True correlation",
-       caption="Dotted line indicates unbiased estimate.")
+       y="Bias (Estimated minus true value)",
+       caption="Results averaged over 1,000 datasets at each point.")
 
 ggsave(filename="~/Downloads/Sim_Results_Bias.png", width=10.5, height=7.5)
 
 # plot MSE as a function of true correlation
 df_performance %>%
-  filter(Method %in% c("EM.alg", "Bayes.unif", "Boot.20th.quantile",
-                       "Freq.20th.quantile", "Pearson", "Unbiased"),
-         Delta==0, N==10, M %in% 0:10) %>%
+  filter(Method %in% c("EM.alg", "Bayes.unif", "Bayes.Jeffreys",
+                       "Bayes.Arcsine", "Pearson"),
+         Delta==0, N==50, M %in% 0:15) %>%
   ggplot(aes(col=Method, x=Rho, y=Mean.sqd.error)) +
   facet_wrap(~ M, scales="free_y") +
   geom_line() +
   geom_point() +
   scale_x_continuous(breaks=unique(df_performance$Rho)) +
-  labs(title="Variance of estimators by number of matched samples (0 to 10)",
-       subtitle="Measured by Mean Sqd. Error (in all cases N=10, delta=0)",
-       x="True correlation")
+  labs(title="Variance of estimators by number of matched samples (0 to 15)",
+       subtitle="Measured by Mean Sqd. Error (in all cases total sample size was 50)",
+       x="True correlation",
+       caption="Results averaged over 1,000 datasets at each point.")
 
 ggsave(filename="~/Downloads/Sim_Results_Variance.png", width=10.5, height=7.5)
