@@ -43,4 +43,6 @@ vignettes/*.pdf
 
 # large results
 DataRaw/simulation_results_2023-01-1*
+DataRaw/simulation_results_2023-01-2*
+DataRaw/simulation_results_2023-01-3*
 DataRaw/simulation_results_2023-02-*

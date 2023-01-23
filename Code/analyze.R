@@ -14,7 +14,7 @@ theme_set(ggpubr::theme_classic2(base_size=12))
 library(here)
 
 # load previously-saved results
-results <- readRDS(here("DataRaw/simulation_results_2023-01-18.rds"))
+results <- readRDS(here("DataRaw/simulation_results_2023-01-21.rds"))
 
 # create "error" matrix
 errors <- results[, 15:26] - results[, "Rho"]
@@ -22,15 +22,16 @@ errors <- results[, 15:26] - results[, "Rho"]
 # calculate average error, or "bias", and mean squared error
 df_performance <- data.frame(errors) %>%
   bind_cols(select(data.frame(results), Distribution:M)) %>%
-  pivot_longer(cols=Max.conserv:Bayes.Arcsine, names_to="Method") %>%
+  pivot_longer(cols=Max.conserv:Bayes.arcsine, names_to="Method") %>%
   group_by(Method, Distribution, Rho, Delta, N, M) %>%
   summarise(Bias=mean(value), Mean.sqd.error=mean(value^2))
     
 # plot bias as a function of true correlation
 df_performance %>%
-  filter(Method %in% c("EM.alg", "Bayes.unif", "Bayes.Jeffreys",
-                       "Bayes.Arcsine", "Pearson"),
-         Delta==0, N==50, M %in% 0:15) %>%
+  filter(Distribution==1, Delta==0, N==50,
+         Method %in% c("EM.alg", "Bayes.unif", "Bayes.Jeffreys",
+                       "Bayes.arcsine", "Pearson"),
+          M %in% 0:15) %>%
   ggplot(aes(col=Method, x=Rho, y=Bias)) +
   geom_hline(yintercept=0, linetype="dashed") +
   facet_wrap(~ M, scales="free_y") +
@@ -47,9 +48,10 @@ ggsave(filename="~/Downloads/Sim_Results_Bias.png", width=10.5, height=7.5)
 
 # plot MSE as a function of true correlation
 df_performance %>%
-  filter(Method %in% c("EM.alg", "Bayes.unif", "Bayes.Jeffreys",
-                       "Bayes.Arcsine", "Pearson"),
-         Delta==0, N==50, M %in% 0:15) %>%
+  filter(Distribution==2, Delta==0, N==50,
+         Method %in% c("EM.alg", "Bayes.unif", "Bayes.Jeffreys",
+                       "Bayes.arcsine", "Pearson"),
+         M %in% 0:15) %>%
   ggplot(aes(col=Method, x=Rho, y=Mean.sqd.error)) +
   facet_wrap(~ M, scales="free_y") +
   geom_line() +
