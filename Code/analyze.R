@@ -19,12 +19,22 @@ results <- readRDS(here("DataRaw/simulation_results_2023-01-21.rds"))
 # create "error" matrix
 errors <- results[, 15:26] - results[, "Rho"]
 
+# calculate "failure" rate, by frequency of NAs
+df_failures <- data.frame(results) %>%
+  filter(Delta==0) %>%
+  pivot_longer(cols=Max.conserv:Bayes.arcsine, names_to="Method") %>%
+  group_by(Method, Distribution, Rho, Delta, N, M) %>%
+  summarise(Failures=sum(is.na(value)), Failure.rate=mean(is.na(value))) %>%
+  filter(Failures > 0)
+
 # calculate average error, or "bias", and mean squared error
 df_performance <- data.frame(errors) %>%
   bind_cols(select(data.frame(results), Distribution:M)) %>%
   pivot_longer(cols=Max.conserv:Bayes.arcsine, names_to="Method") %>%
   group_by(Method, Distribution, Rho, Delta, N, M) %>%
-  summarise(Bias=mean(value), Mean.sqd.error=mean(value^2))
+  summarise(Bias=mean(value, na.rm=T), Mean.sqd.error=mean(value^2, na.rm=T))
+
+saveRDS(df_performance, here("DataProcessed/performance_2023-01-21.rds"))
     
 # plot bias as a function of true correlation
 df_performance %>%
@@ -48,7 +58,7 @@ ggsave(filename="~/Downloads/Sim_Results_Bias.png", width=10.5, height=7.5)
 
 # plot MSE as a function of true correlation
 df_performance %>%
-  filter(Distribution==2, Delta==0, N==50,
+  filter(Distribution==1, Delta==0, N==50,
          Method %in% c("EM.alg", "Bayes.unif", "Bayes.Jeffreys",
                        "Bayes.arcsine", "Pearson"),
          M %in% 0:15) %>%
@@ -63,3 +73,11 @@ df_performance %>%
        caption="Results averaged over 1,000 datasets at each point.")
 
 ggsave(filename="~/Downloads/Sim_Results_Variance.png", width=10.5, height=7.5)
+
+
+
+
+
+
+
+
