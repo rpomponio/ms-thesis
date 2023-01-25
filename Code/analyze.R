@@ -16,16 +16,29 @@ library(here)
 # load previously-saved results
 results <- readRDS(here("DataRaw/simulation_results_2023-01-21.rds"))
 
+# pivot results to longer
+df_results_long <- data.frame(results) %>%
+  pivot_longer(cols=Max.conserv:Bayes.arcsine, names_to="Method") %>%
+  rename(Estimate=value)
+
+# compute (modified) t-statistics and corresponding p-values
+df_inference <- df_results_long %>%
+  mutate(
+    d.bar = Mu.hat.X - Mu.hat.Y,
+    sum.sqs = Sigma.sqd.hat.X * N + Sigma.sqd.hat.Y * N,
+    t.mod = d.bar / sqrt((sum.sqs / (N * (N-1))) * (1 - Estimate)),
+    p.value = 2 * pt(abs(t.mod), df=(2 * N - 2), lower.tail=F)) %>%
+  group_by(Method, Distribution, Rho, Delta, N, M) %>%
+  summarise(Rejection.rate=mean(p.value < 0.05, na.rm=T))
+  
+# calculate "failure" rate, by frequency of NAs
+df_failures <- df_results_long %>%
+  group_by(Method, Distribution, Rho, Delta, N, M) %>%
+  summarise(Failures=sum(is.na(Estimate)), Failure.rate=mean(is.na(Estimate))) %>%
+  filter(Failures > 0)
+
 # create "error" matrix
 errors <- results[, 15:26] - results[, "Rho"]
-
-# calculate "failure" rate, by frequency of NAs
-df_failures <- data.frame(results) %>%
-  filter(Delta==0) %>%
-  pivot_longer(cols=Max.conserv:Bayes.arcsine, names_to="Method") %>%
-  group_by(Method, Distribution, Rho, Delta, N, M) %>%
-  summarise(Failures=sum(is.na(value)), Failure.rate=mean(is.na(value))) %>%
-  filter(Failures > 0)
 
 # calculate average error, or "bias", and mean squared error
 df_performance <- data.frame(errors) %>%
@@ -74,10 +87,19 @@ df_performance %>%
 
 ggsave(filename="~/Downloads/Sim_Results_Variance.png", width=10.5, height=7.5)
 
-
-
-
-
-
+# plot correlation with "oracle" estimator: Pearson with all matched samples
+df_results_long %>%
+  filter(Distribution==1, Delta==0, N==20,
+         Method %in% c("EM.alg", "Bayes.unif", "Bayes.Jeffreys",
+                       "Bayes.arcsine", "Pearson", "Max.conserv"),
+         M == 10) %>%
+  sample_frac(0.1) %>%
+  ggplot(aes(x=Rho.hat, y=Estimate)) +
+  facet_wrap(~ Method) +
+  geom_point() +
+  geom_abline(intercept=0, slope=1, linetype="dashed", col="blue") +
+  labs(title="Correlation between estimators and 'oracle' estimator",
+       x="Pearson correlation of matched samples",
+       caption="Results sampled from 1,000 datasets for efficiency.")
 
 

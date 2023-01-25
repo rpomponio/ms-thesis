@@ -16,7 +16,7 @@ fluidPage(
     sidebarPanel(
       selectInput("distribution", "Distribution type", c("Normal", "Ordinal")),
       checkboxGroupInput("delta", "Mean difference", c(0, 0.25, 0.5), c(0)),
-      selectInput("n", "(Group) sample size", c(10, 20, 50, 100, 200)),
+      selectInput("n", "(Group) sample size", c(10, 20, 50, 100, 200), c(50)),
       selectInput("perc.matched", "Prop. matched", c("0%", "5%", "10%", "15%",
                                                      "20%", "30%", "50%", "100%"),
                   c("30%")),
@@ -35,7 +35,10 @@ fluidPage(
                    sliderInput("rho", "Correlation", -0.95, 0.95, 0.25, 0.05),
                    plotOutput("scatterplot", width="80%"))),
         tabPanel("Bias", plotOutput("biasplot")),
-        tabPanel("Variance", plotOutput("varianceplot"))
+        tabPanel("Variance", plotOutput("varianceplot")),
+        tabPanel("Oracle", plotOutput("orracleplot")),
+        tabPanel("Type-I error", "plot Type-I error vs. correlation here"),
+        tabPanel("Power", "plot power vs. correlation here")
       )
     )
   )
