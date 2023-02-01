@@ -21,8 +21,26 @@ df_results_long <- data.frame(results) %>%
   pivot_longer(cols=Max.conserv:Bayes.arcsine, names_to="Method") %>%
   rename(Estimate=value)
 
+# calculate "failure" rate, by frequency of NAs
+df_failures <- df_results_long %>%
+  group_by(Method, Distribution, M) %>%
+  summarise(
+    Num.iterations = n(),
+    Num.failures=sum(is.na(Estimate)),
+    Failure.rate=mean(is.na(Estimate)))
+
+df_failures %>%
+  filter(Failure.rate > 0.01, M > 3) %>%
+  View()
+
+# oracle method knows exact correlation
+df_oracle <- df_results_long %>%
+  filter(Method=="Max.conserv") %>%
+  mutate(Estimate=Rho, Method="Oracle")
+
 # compute (modified) t-statistics and corresponding p-values
 df_inference <- df_results_long %>%
+  bind_rows(df_oracle) %>%
   mutate(
     d.bar = Mu.hat.X - Mu.hat.Y,
     sum.sqs = Sigma.sqd.hat.X * N + Sigma.sqd.hat.Y * N,
@@ -31,12 +49,6 @@ df_inference <- df_results_long %>%
   group_by(Method, Distribution, Rho, Delta, N, M) %>%
   summarise(Rejection.rate=mean(p.value < 0.05, na.rm=T))
   
-# calculate "failure" rate, by frequency of NAs
-df_failures <- df_results_long %>%
-  group_by(Method, Distribution, Rho, Delta, N, M) %>%
-  summarise(Failures=sum(is.na(Estimate)), Failure.rate=mean(is.na(Estimate))) %>%
-  filter(Failures > 0)
-
 # create "error" matrix
 errors <- results[, 15:26] - results[, "Rho"]
 
@@ -87,7 +99,7 @@ df_performance %>%
 
 ggsave(filename="~/Downloads/Sim_Results_Variance.png", width=10.5, height=7.5)
 
-# plot correlation with "oracle" estimator: Pearson with all matched samples
+# plot correlation with pseudo-"oracle" estimator
 df_results_long %>%
   filter(Distribution==1, Delta==0, N==20,
          Method %in% c("EM.alg", "Bayes.unif", "Bayes.Jeffreys",
@@ -102,4 +114,21 @@ df_results_long %>%
        x="Pearson correlation of matched samples",
        caption="Results sampled from 1,000 datasets for efficiency.")
 
+# plot Type-I error rate as function of correlation
+df_inference %>%
+  filter(Distribution==1, Delta==0, N==50,
+         Method %in% c("EM.alg", "Max.conserv", "Freq.20th.quantile",
+                       "Bayes.arcsine", "Pearson", "Oracle"),
+         M %in% 0:15) %>%
+  ggplot(aes(col=Method, x=Rho, y=Rejection.rate)) +
+  geom_hline(yintercept=0.05, linetype="dashed") +
+  facet_wrap(~ M, scales="free_y") +
+  geom_line() +
+  geom_point() +
+  scale_x_continuous(breaks=unique(df_inference$Rho)) +
+  labs(title="Type-I error of methods by number of matched samples (0 to 15)",
+       subtitle="In all cases total sample size was 50",
+       x="True correlation",
+       y="Type-I error (rejected null hypotheses)",
+       caption="Results averaged over 1,000 datasets at each point.")
 
