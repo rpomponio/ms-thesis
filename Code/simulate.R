@@ -66,7 +66,6 @@ results <- foreach(i=1:n_datasets, .combine=rbind, .inorder=FALSE,
   
   # setup
   n_matched <- floor(params$Prop.matched * params$N)
-  boot_res <- cor.boot(X, Y, n_matched)
   
   # @Ryan: temporary fix for zero-variance datasets
   if (sd(X)==0) {
@@ -82,6 +81,9 @@ results <- foreach(i=1:n_datasets, .combine=rbind, .inorder=FALSE,
   sigma_sqd_X <- sum((X - mu_X)^2) / params$N
   sigma_sqd_Y <- sum((Y - mu_Y)^2) / params$N
   rho_hat <- cor(X, Y)
+  
+  # run bootstrapping
+  boot_res <- cor.boot(X, Y, n_matched)
   
   # estimate correlation using various methods and aggregate results
   list(
