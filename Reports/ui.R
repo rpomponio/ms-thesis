@@ -16,29 +16,31 @@ fluidPage(
     sidebarPanel(
       selectInput("distribution", "Distribution type", c("Normal", "Ordinal")),
       checkboxGroupInput("delta", "Mean difference", c(0, 0.25, 0.5), c(0)),
-      selectInput("n", "(Group) sample size", c(10, 20, 50, 100, 200), c(50)),
-      selectInput("perc.matched", "Prop. matched", c("0%", "5%", "10%", "15%",
-                                                     "20%", "30%", "50%", "100%"),
+      selectInput("n", "Sample size (per group)", c(10, 20, 50, 100, 200), c(20)),
+      selectInput("perc.matched", "Prop. matched (b/w groups)",
+                  c("0%", "5%", "10%", "15%", "20%", "30%", "50%", "100%"),
                   c("30%")),
+      selectInput("rho", "Correlation",
+                  c(-0.9, -0.5, -0.25, 0, 0.25, 0.5, 0.9),
+                  c(0.5)),
       selectizeInput("method", "Estimators",
                      c("Pearson", "Max.conserv", "EM.alg",
                        "Shrunken", "Unbiased", "Boot.mean",
                        "Boot.5th.quantile", "Boot.20th.quantile",
                        "Freq.20th.quantile", "Bayes.arcsine", "Bayes.Jeffreys",
                        "Bayes.unif"),
-                     c("Pearson", "Max.conserv", "EM.alg"), multiple=T),
+                     c("Pearson", "EM.alg", "Shrunken"), multiple=T),
+      checkboxInput("plot.indep", "Plot 2-sample T (Power)", value=F)
     ),
     mainPanel(
       tabsetPanel(
-        tabPanel("Dummy dataset",
-                 verticalLayout(
-                   sliderInput("rho", "Correlation", -0.95, 0.95, 0.25, 0.05),
-                   plotOutput("scatterplot", width="80%"))),
+        tabPanel("Dummy dataset", plotOutput("scatterplot", width="90%")),
+        tabPanel("Failures", DT::dataTableOutput("failures")),
         tabPanel("Bias", plotOutput("biasplot")),
         tabPanel("Variance", plotOutput("varianceplot")),
-        tabPanel("Oracle", plotOutput("orracleplot")),
-        tabPanel("Type-I error", "plot Type-I error vs. correlation here"),
-        tabPanel("Power", "plot power vs. correlation here")
+        tabPanel("Power", plotOutput("powerplot")),
+        tabPanel("Accuracy", plotOutput("accuracyplot")),
+        tabPanel("Methods", "Print description of methods here")
       )
     )
   )

@@ -13,10 +13,10 @@ library(ggplot2)
 theme_set(ggpubr::theme_classic2(base_size=12))
 library(here)
 
-# load previously-saved results
+# load previously-saved simulation results
 results <- readRDS(here("DataRaw/simulation_results_2023-02-03.rds"))
 
-# temporary fix for NaNs and Infs
+# temporary fix for NaNs and Infs (occurs in shrunken estimator)
 results[!is.finite(results)] <- NA
 
 # pivot to long data frame
@@ -36,11 +36,12 @@ df_results_long <- df_results_long %>%
 
 # calculate failure rate per method
 df_failures <- df_results_long %>%
-  group_by(Method, Distribution, M) %>%
+  group_by(Method, Distribution, Rho, Delta, N, Prop.matched, M) %>%
   summarise(
     Num.iterations = n(),
     Num.failures=sum(Failure),
-    Failure.rate=mean(Failure))
+    Failure.rate=mean(Failure)) %>%
+  ungroup()
 
 # when are failures occurring most frequently (with sample size > 3)?
 df_failures %>%
@@ -66,29 +67,34 @@ df_inference <- df_results_long %>%
     t.ind = d.bar / sqrt( sum.sqs / (N * (N - 1)) ),
     t.mod = suppressWarnings(ifelse(Failure==1, NA, t.ind / sqrt(1 - Estimate))),
     p.value = 2 * pt(abs(t.mod), df=(2 * N - 2), lower.tail=F),
-    d.lwr = 0, ###how to compute Conf Int of mean?
+    d.lwr = 0, # @Ryan: how to compute Conf Int of mean for modified test?
     d.upr = 0) %>%
-  group_by(Method, Distribution, Rho, Delta, N, M) %>%
-  summarise(Rejection.rate=mean(p.value < 0.05, na.rm=T))
+  group_by(Method, Distribution, Rho, Delta, N, Prop.matched, M) %>%
+  summarise(Rejection.rate=mean(p.value < 0.05, na.rm=T)) %>%
+  ungroup()
 
 # create "error" matrix
 errors <- results[, 15:26] - results[, "Rho"]
 
 # calculate average error, or "bias", and mean squared error
 df_performance <- data.frame(errors) %>%
-  bind_cols(select(data.frame(results), Distribution:M)) %>%
+  bind_cols(select(data.frame(results), Distribution:Prop.matched)) %>%
   pivot_longer(cols=Max.conserv:Bayes.arcsine, names_to="Method") %>%
-  group_by(Method, Distribution, Rho, Delta, N, M) %>%
-  summarise(Bias=mean(value, na.rm=T), Mean.sqd.error=mean(value^2, na.rm=T))
+  group_by(Method, Distribution, Rho, Delta, N, Prop.matched, M) %>%
+  summarise(Bias=mean(value, na.rm=T), Mean.sqd.error=mean(value^2, na.rm=T)) %>%
+  ungroup()
 
-# saveRDS(df_performance, here("DataProcessed/performance_2023-01-21.rds"))
+# save "processed" data
+saveRDS(df_failures, here("DataProcessed/failures_2023-02-03.rds"))
+saveRDS(df_inference, here("DataProcessed/inference_2023-02-03.rds"))
+saveRDS(df_performance, here("DataProcessed/performance_2023-02-03.rds"))
     
 # plot bias as a function of true correlation
 df_performance %>%
   filter(Distribution==1, Delta==0, N==10,
          Method %in% c("EM.alg", "Bayes.arcsine", "Pearson",
                        "Shrunken", "Unbiased", "Freq.20th.quantile"),
-          M %in% 0:10) %>%
+         Prop.matched %in% c(0, 0.1, 0.2, 0.3, 0.5, 1)) %>%
   ggplot(aes(col=Method, x=Rho, y=Bias)) +
   geom_hline(yintercept=0, linetype="dashed") +
   facet_wrap(~ M, scales="free_y") +
@@ -108,7 +114,7 @@ df_performance %>%
   filter(Distribution==1, Delta==0, N==10,
          Method %in% c("EM.alg", "Bayes.arcsine", "Pearson",
                        "Shrunken", "Unbiased", "Freq.20th.quantile"),
-         M %in% 0:10) %>%
+         Prop.matched %in% c(0, 0.1, 0.2, 0.3, 0.5, 1)) %>%
   ggplot(aes(col=Method, x=Rho, y=Mean.sqd.error)) +
   facet_wrap(~ M, scales="free_y") +
   geom_line() +
@@ -141,7 +147,7 @@ df_inference %>%
   filter(Distribution==1, Delta==0, N==10,
          Method %in% c("EM.alg", "Bayes.arcsine", "Pearson",
                        "Shrunken", "Oracle", "Independence"),
-         M %in% 0:10) %>%
+         Prop.matched %in% c(0, 0.1, 0.2, 0.3, 0.5, 1)) %>%
   ggplot(aes(col=Method, x=Rho, y=Rejection.rate)) +
   geom_hline(yintercept=0.05, linetype="dashed") +
   facet_wrap(~ M, scales="free_y") +
