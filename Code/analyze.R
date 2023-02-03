@@ -14,20 +14,24 @@ theme_set(ggpubr::theme_classic2(base_size=12))
 library(here)
 
 # load previously-saved results
-results <- readRDS(here("DataRaw/simulation_results_2023-01-21.rds"))
+results <- readRDS(here("DataRaw/simulation_results_2023-02-03.rds"))
 
-# pivot results to longer
+# temporary fix for NaNs
+results[is.nan(results)] <- NA
+
+# pivot results to longer, flag all "Failures"
 df_results_long <- data.frame(results) %>%
   pivot_longer(cols=Max.conserv:Bayes.arcsine, names_to="Method") %>%
-  rename(Estimate=value)
+  rename(Estimate=value) %>%
+  mutate(Failure=ifelse(is.na(Estimate) | Estimate >= 1 | Estimate <= -1, 1, 0))
 
 # calculate "failure" rate, by frequency of NAs
 df_failures <- df_results_long %>%
   group_by(Method, Distribution, M) %>%
   summarise(
     Num.iterations = n(),
-    Num.failures=sum(is.na(Estimate)),
-    Failure.rate=mean(is.na(Estimate)))
+    Num.failures=sum(Failure),
+    Failure.rate=mean(Failure))
 
 df_failures %>%
   filter(Failure.rate > 0.01, M > 3) %>%
@@ -36,19 +40,27 @@ df_failures %>%
 # oracle method knows exact correlation
 df_oracle <- df_results_long %>%
   filter(Method=="Max.conserv") %>%
-  mutate(Estimate=Rho, Method="Oracle")
+  mutate(Estimate=Rho, Method="Oracle", Falure=0)
+
+# naive method assumes zero correlation
+df_naive <- df_results_long %>%
+  filter(Method=="Max.conserv") %>%
+  mutate(Estimate=0, Method="Independence", Failure=0)
 
 # compute (modified) t-statistics and corresponding p-values
 df_inference <- df_results_long %>%
-  bind_rows(df_oracle) %>%
+  bind_rows(df_oracle, df_naive) %>%
   mutate(
     d.bar = Mu.hat.X - Mu.hat.Y,
-    sum.sqs = Sigma.sqd.hat.X * N + Sigma.sqd.hat.Y * N,
-    t.mod = d.bar / sqrt((sum.sqs / (N * (N-1))) * (1 - Estimate)),
-    p.value = 2 * pt(abs(t.mod), df=(2 * N - 2), lower.tail=F)) %>%
+    sum.sqs = (Sigma.sqd.hat.X * N) + (Sigma.sqd.hat.Y * N),
+    t.ind = d.bar / sqrt( sum.sqs / (N * (N - 1)) ),
+    t.mod = ifelse( Failure==1, NA, t.ind / sqrt(1 - Estimate) ),
+    p.value = 2 * pt(abs(t.mod), df=(2 * N - 2), lower.tail=F),
+    d.lwr = 0, ###how to compute Conf Int of mean?
+    d.upr = 0) %>%
   group_by(Method, Distribution, Rho, Delta, N, M) %>%
   summarise(Rejection.rate=mean(p.value < 0.05, na.rm=T))
-  
+
 # create "error" matrix
 errors <- results[, 15:26] - results[, "Rho"]
 

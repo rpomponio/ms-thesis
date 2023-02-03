@@ -30,7 +30,7 @@ est.cor.pearson <- function(X, Y, n.matched) {
 
 # compute "shrunken" correlation of matched samples
 est.cor.shrunken <- function(X, Y, n.matched) {
-  if (n.matched <= 1) {
+  if (n.matched <= 3) {
     return(NA)
   } else {
     r <- cor(X[1:n.matched], Y[1:n.matched])
