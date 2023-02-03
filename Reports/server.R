@@ -30,6 +30,10 @@ function(input, output, session) {
     vals$n.matched <- floor(
       (as.numeric(gsub("%", "", input$perc.matched)) / 100) * as.numeric(input$n))
   })
+  
+  output$n.matched <- renderText({
+    vals$n.matched
+  })
 
   output$scatterplot <- renderPlot({
     
@@ -120,10 +124,12 @@ function(input, output, session) {
 
   output$powerplot <- renderPlot({
     
+    addl.methods <- c()
+    if (input$plot.oracle) {
+      addl.methods <- c(addl.methods, "Oracle")
+    }
     if (input$plot.indep) {
-      addl.methods <- c("Oracle", "Independence")
-    } else {
-      addl.methods <- c("Oracle")
+      addl.methods <- c(addl.methods, "Independence")
     }
     
     df_inference %>%

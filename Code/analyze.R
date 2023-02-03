@@ -24,7 +24,7 @@ df_results_long <- data.frame(results) %>%
   pivot_longer(cols=Max.conserv:Bayes.arcsine, names_to="Method") %>%
   rename(Estimate=value)
 
-# when are estimates outside bounds of (-1, 1)?
+# when are estimates outside bounds of (-1, 1)? Note this occurs when m=2 for Pearson
 df_results_long %>%
   filter(Estimate >= 1 | Estimate <=-1) %>%
   sample_n(100) %>%

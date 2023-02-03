@@ -20,6 +20,7 @@ fluidPage(
       selectInput("perc.matched", "Prop. matched (b/w groups)",
                   c("0%", "5%", "10%", "15%", "20%", "30%", "50%", "100%"),
                   c("30%")),
+      wellPanel("Number of matched samples:", textOutput("n.matched")),
       selectInput("rho", "Correlation",
                   c(-0.9, -0.5, -0.25, 0, 0.25, 0.5, 0.9),
                   c(0.5)),
@@ -30,16 +31,19 @@ fluidPage(
                        "Freq.20th.quantile", "Bayes.arcsine", "Bayes.Jeffreys",
                        "Bayes.unif"),
                      c("Pearson", "EM.alg", "Shrunken"), multiple=T),
-      checkboxInput("plot.indep", "Plot 2-sample T (Power)", value=F)
+      wellPanel(
+        checkboxInput("plot.oracle", "Plot 'oracle' (Power)", value=T),
+        checkboxInput("plot.indep", "Plot 2-sample T (Power)", value=F)
+      )
     ),
     mainPanel(
       tabsetPanel(
         tabPanel("Dummy dataset", plotOutput("scatterplot", width="90%")),
         tabPanel("Failures", DT::dataTableOutput("failures")),
-        tabPanel("Bias", plotOutput("biasplot")),
-        tabPanel("Variance", plotOutput("varianceplot")),
-        tabPanel("Power", plotOutput("powerplot")),
-        tabPanel("Accuracy", plotOutput("accuracyplot")),
+        tabPanel("Bias", plotOutput("biasplot", height="600px")),
+        tabPanel("Variance", plotOutput("varianceplot", height="600px")),
+        tabPanel("Accuracy", plotOutput("accuracyplot", height="600px")),
+        tabPanel("Power", plotOutput("powerplot", height="600px")),
         tabPanel("Methods", "Print description of methods here")
       )
     )
