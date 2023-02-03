@@ -27,6 +27,7 @@ est.cor.pearson <- function(X, Y, n.matched) {
     return(cor(X[1:n.matched], Y[1:n.matched]))
   }
 }
+# @Ryan: what to do when Pearson correlation is exactly +/- 1?
 
 # compute "shrunken" correlation of matched samples
 est.cor.shrunken <- function(X, Y, n.matched) {
