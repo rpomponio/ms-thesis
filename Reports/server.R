@@ -169,5 +169,29 @@ function(input, output, session) {
     
   })
   
+  output$methods <- DT::renderDataTable({
+    
+    data.frame(
+      Method.Name=c("Pearson", "Max.conserv", "EM.alg",
+                    "Shrunken", "Unbiased", "Boot.mean",
+                    "Boot.5th.quantile", "Boot.20th.quantile",
+                    "Freq.20th.quantile", "Bayes.arcsine", "Bayes.Jeffreys",
+                    "Bayes.unif"),
+      Description=c(
+        "Pearson correlation coefficient of matched samples",
+        "Minimum possible correlation given all samples (including unmatched)",
+        "EM-based maximum likelihood estimate of correlation given unmatched data",
+        "The root of adjusted R-squared, computed on matched samples",
+        "Approximately unbiased estimate of correlation, computed on matched samples",
+        "Mean of 10k bootstrap iterations of the Pearson correlation",
+        "5th percentile of 10k bootstrap iterations of the Pearson correlation",
+        "20th percentile of 10k bootstrap iterations of the Pearson correlation",
+        "Lower bound of an 80% frequentist interval for the correlation coefficient",
+        "Approximate Bayesian posterior mean correlation, assuming arcsine prior",
+        "Approximate Bayesian posterior mean correlation, assuming Jeffreys prior",
+        "Approximate Bayesian posterior mean correlation, assuming Uniform prior")
+    )
+  }, options=list(pageLength=15))
+  
   
 }

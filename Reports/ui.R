@@ -38,13 +38,17 @@ fluidPage(
     ),
     mainPanel(
       tabsetPanel(
-        tabPanel("Dummy dataset", plotOutput("scatterplot", width="90%")),
-        tabPanel("Failures", DT::dataTableOutput("failures")),
+        tabPanel("Dummy dataset", plotOutput("scatterplot", width="90%", height="500px")),
+        tabPanel("Failures",
+                 verticalLayout(
+                   p("Failures were recorded when an invalid correlation estimate was obtained."),
+                   DT::dataTableOutput("failures"),
+                 )),
         tabPanel("Bias", plotOutput("biasplot", height="600px")),
         tabPanel("Variance", plotOutput("varianceplot", height="600px")),
-        tabPanel("Accuracy", plotOutput("accuracyplot", height="600px")),
+        tabPanel("Accuracy", "Plot accuracy here"),
         tabPanel("Power", plotOutput("powerplot", height="600px")),
-        tabPanel("Methods", "Print description of methods here")
+        tabPanel("Methods", DT::dataTableOutput("methods"))
       )
     )
   )
