@@ -46,7 +46,7 @@ fluidPage(
                  )),
         tabPanel("Bias", plotOutput("biasplot", height="600px")),
         tabPanel("Variance", plotOutput("varianceplot", height="600px")),
-        tabPanel("Accuracy", "Plot accuracy here"),
+        tabPanel("Accuracy", plotOutput("accuracyplot", height="600px")),
         tabPanel("Power", plotOutput("powerplot", height="600px")),
         tabPanel("Methods", DT::dataTableOutput("methods"))
       )
