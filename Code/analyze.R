@@ -24,15 +24,27 @@ df_results_long <- data.frame(results) %>%
   pivot_longer(cols=Max.conserv:Bayes.arcsine, names_to="Method") %>%
   rename(Estimate=value)
 
-# when are estimates outside bounds of (-1, 1)? Note this occurs when m=2 for Pearson
-df_results_long %>%
-  filter(Estimate >= 1 | Estimate <=-1) %>%
-  sample_n(100) %>%
-  View()
+# when are estimates outside bounds of (-1, 1)?
+# df_results_long %>%
+#   filter(Estimate > 1 | Estimate < -1) %>%
+#   sample_n(100) %>%
+#   View()
+
+# note boundary occurs for Pearson when m=2 (technically valid)
+# df_results_long %>%
+#   filter(Distribution==1, Delta==0, Rho==0.5, Method=="Pearson", N==10, M==2) %>%
+#   filter(Estimate == 1 | Estimate == -1) %>%
+#   View()
 
 # flag all "Failures" as cases where valid correlation was not estimated
 df_results_long <- df_results_long %>%
-  mutate(Failure=ifelse(!is.finite(Estimate) | Estimate >= 1 | Estimate <= -1, 1, 0))
+  mutate(Failure.type=case_when(
+    !is.finite(Estimate) ~ "Undefined",
+    Estimate < -1 | Estimate > 1 ~ "Invalid",
+    abs(Estimate - 1) < 0.000001 ~ "Boundary",
+    abs(Estimate + 1) < 0.000001 ~ "Boundary",
+    TRUE ~ "Nonfailure")) %>%
+  mutate(Failure=ifelse(Failure.type=="Nonfailure", 0, 1))
 
 # calculate failure rate per method
 df_failures <- df_results_long %>%
@@ -44,9 +56,9 @@ df_failures <- df_results_long %>%
   ungroup()
 
 # when are failures occurring most frequently (with sample size > 3)?
-df_failures %>%
-  filter(Failure.rate > 0.01, M > 3) %>%
-  View()
+# df_failures %>%
+#   filter(Failure.rate > 0.01, M > 3) %>%
+#   View()
 
 # oracle method: use true correlation
 df_oracle <- df_results_long %>%
