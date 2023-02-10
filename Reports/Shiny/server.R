@@ -15,7 +15,8 @@ library(ggpubr)
 library(ggplot2)
 theme_set(theme_classic2(base_size=18))
 
-# eventually: load processed results for better performance
+# load processed results
+df_results_long <- readRDS(here("DataProcessed/lite_2023-02-03.rds"))
 df_failures <- readRDS(here("DataProcessed/failures_2023-02-03.rds"))
 df_inference <- readRDS(here("DataProcessed/inference_2023-02-03.rds"))
 df_performance <- readRDS(here("DataProcessed/performance_2023-02-03.rds"))
@@ -115,7 +116,7 @@ function(input, output, session) {
       geom_line() +
       geom_point(size=5) +
       scale_x_continuous(breaks=unique(df_performance$Rho)) +
-      labs(title="Variance of estimators by true correlation",
+      labs(title="MSE of estimators by true correlation",
            x="True correlation",
            y="Mean squared error",
            caption="Results averaged over 1,000 datasets at each point.")
@@ -129,7 +130,7 @@ function(input, output, session) {
       addl.methods <- c(addl.methods, "Oracle")
     }
     if (input$plot.indep) {
-      addl.methods <- c(addl.methods, "Independence")
+      addl.methods <- c(addl.methods, "Independent")
     }
     
     df_inference %>%
@@ -150,21 +151,21 @@ function(input, output, session) {
            caption="Results averaged over 1,000 datasets at each point.")
   })
   
-  output$accuracyplot <- renderPlot({
+  output$comparisonplot <- renderPlot({
     
     df_results_long %>%
       filter(Distribution==ifelse(input$distribution=="Normal", 1, 2),
-             Delta == as.numeric(input$delta)[1],
+             Delta %in% as.numeric(input$delta),
              N == as.numeric(input$n),
-             Method %in% c(input$method[1:6]),
+             Method %in% c(input$method[1:2]),
              Prop.matched == vals$prop.matched) %>%
-      ggplot(aes(x=Rho.hat, y=Estimate)) +
-      facet_wrap(~ Method) +
-      geom_point() +
-      geom_abline(intercept=0, slope=1, linetype="dashed", col="blue") +
-      labs(title="Associations between estimates of Rho and MLE of Rho",
-           x="Pearson correlation of all samples",
-           y="Estimated correlation",
+      tidyr::pivot_wider(names_from=Method, values_from=Estimate) %>%
+      ggplot(aes_string(x=input$method[1], y=input$method[2])) +
+      facet_wrap(~ Delta) +
+      geom_point(size=5, alpha=0.25) +
+      geom_smooth(method="lm", formula="y ~ x", se=F) +
+      geom_abline(intercept=0, slope=1, linetype="dashed") +
+      labs(title="Scatterplot of association between estimators",
            caption="Results sampled from 1,000 datasets for efficiency.")
     
   })
@@ -172,12 +173,13 @@ function(input, output, session) {
   output$methods <- DT::renderDataTable({
     
     data.frame(
-      Method.Name=c("Pearson", "Max.conserv", "EM.alg",
+      Method.Name=c("Rho.hat", "Pearson", "Max.conserv", "EM.alg",
                     "Shrunken", "Unbiased", "Boot.mean",
                     "Boot.5th.quantile", "Boot.20th.quantile",
                     "Freq.20th.quantile", "Bayes.arcsine", "Bayes.Jeffreys",
                     "Bayes.unif"),
       Description=c(
+        "Maximum likelihood estimate under fully matched data (for comparison only)",
         "Pearson correlation coefficient of matched samples",
         "Minimum possible correlation given all samples (including unmatched)",
         "EM-based maximum likelihood estimate of correlation given unmatched data",
@@ -191,7 +193,7 @@ function(input, output, session) {
         "Approximate Bayesian posterior mean correlation, assuming Jeffreys prior",
         "Approximate Bayesian posterior mean correlation, assuming Uniform prior")
     )
-  }, options=list(pageLength=15))
+  }, options=list(pageLength=15, dom='tip'))
   
   
 }

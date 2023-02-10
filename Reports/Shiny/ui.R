@@ -25,30 +25,31 @@ fluidPage(
                   c(-0.9, -0.5, -0.25, 0, 0.25, 0.5, 0.9),
                   c(0.5)),
       selectizeInput("method", "Estimators",
-                     c("Pearson", "Max.conserv", "EM.alg",
+                     c("Rho.hat", "Pearson", "Max.conserv", "EM.alg",
                        "Shrunken", "Unbiased", "Boot.mean",
                        "Boot.5th.quantile", "Boot.20th.quantile",
                        "Freq.20th.quantile", "Bayes.arcsine", "Bayes.Jeffreys",
                        "Bayes.unif"),
-                     c("Pearson", "EM.alg", "Shrunken"), multiple=T),
+                     c("Pearson", "EM.alg", "Bayes.Jeffreys"), multiple=T),
       wellPanel(
-        checkboxInput("plot.oracle", "Plot 'oracle' (Power)", value=T),
-        checkboxInput("plot.indep", "Plot 2-sample T (Power)", value=F)
+        "Power plot settings",
+        checkboxInput("plot.oracle", "Plot 'oracle' test", value=T),
+        checkboxInput("plot.indep", "Plot independent t-test", value=F)
       )
     ),
     mainPanel(
       tabsetPanel(
         tabPanel("Dummy dataset", plotOutput("scatterplot", width="90%", height="500px")),
-        tabPanel("Failures",
-                 verticalLayout(
-                   p("Failures were recorded when an invalid correlation estimate was obtained."),
-                   DT::dataTableOutput("failures"),
-                 )),
+        tabPanel("Failures", verticalLayout(
+          p("Failures were recorded when an invalid correlation estimate was obtained."),
+          DT::dataTableOutput("failures"))),
         tabPanel("Bias", plotOutput("biasplot", height="600px")),
         tabPanel("Variance", plotOutput("varianceplot", height="600px")),
-        tabPanel("Accuracy", plotOutput("accuracyplot", height="600px")),
+        tabPanel("Comparison", verticalLayout(
+          p("Compares the first two estimators selected."),
+          plotOutput("comparisonplot", height="600px"))),
         tabPanel("Power", plotOutput("powerplot", height="600px")),
-        tabPanel("Methods", DT::dataTableOutput("methods"))
+        tabPanel("Estimators", DT::dataTableOutput("methods"))
       )
     )
   )

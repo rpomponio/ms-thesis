@@ -103,5 +103,7 @@ saveRDS(df_failures, here("DataProcessed/failures_2023-02-03.rds"))
 saveRDS(df_inference, here("DataProcessed/inference_2023-02-03.rds"))
 saveRDS(df_performance, here("DataProcessed/performance_2023-02-03.rds"))
 
-
-
+# save 'lite' version of long data for improved speed
+set.seed(2023)
+df_results_lite <- sample_n(df_results_long, 1000000)
+saveRDS(df_results_lite, here("DataProcessed/lite_2023-02-03.rds"))
