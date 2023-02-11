@@ -84,6 +84,9 @@ function(input, output, session) {
   
   output$biasplot <- renderPlot({
     
+    sim_note <- paste0("Simulated with n=", as.numeric(input$n),
+                       ", m=", vals$n.matched)
+    
     df_performance %>%
       filter(Distribution==ifelse(input$distribution=="Normal", 1, 2),
              Delta %in% as.numeric(input$delta),
@@ -97,12 +100,16 @@ function(input, output, session) {
       geom_point(size=5) +
       scale_x_continuous(breaks=unique(df_performance$Rho)) +
       labs(title="Bias of estimators by true correlation",
+           subtitle=sim_note,
            x="True correlation",
            y="Bias (Estimated minus true value)",
            caption="Results averaged over 1,000 datasets at each point.")
   })
   
   output$varianceplot <- renderPlot({
+    
+    sim_note <- paste0("Simulated with n=", as.numeric(input$n),
+                       ", m=", vals$n.matched)
     
     df_performance %>%
       filter(Distribution==ifelse(input$distribution=="Normal", 1, 2),
@@ -117,6 +124,7 @@ function(input, output, session) {
       geom_point(size=5) +
       scale_x_continuous(breaks=unique(df_performance$Rho)) +
       labs(title="MSE of estimators by true correlation",
+           subtitle=sim_note,
            x="True correlation",
            y="Mean squared error",
            caption="Results averaged over 1,000 datasets at each point.")
@@ -133,6 +141,9 @@ function(input, output, session) {
       addl.methods <- c(addl.methods, "Independent")
     }
     
+    sim_note <- paste0("Simulated with n=", as.numeric(input$n),
+                       ", m=", vals$n.matched)
+    
     df_inference %>%
       filter(Distribution==ifelse(input$distribution=="Normal", 1, 2),
              Delta %in% as.numeric(input$delta),
@@ -146,6 +157,7 @@ function(input, output, session) {
       geom_point(size=5) +
       scale_x_continuous(breaks=unique(df_inference$Rho)) +
       labs(title="Rejection rate of hypoth. tests by true correlation",
+           subtitle=sim_note,
            x="True correlation",
            y="Prop. rejected null hypotheses",
            caption="Results averaged over 1,000 datasets at each point.")

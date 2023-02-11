@@ -19,7 +19,7 @@ fluidPage(
       selectInput("n", "Sample size (per group)", c(10, 20, 50, 100, 200), c(20)),
       selectInput("perc.matched", "Prop. matched (b/w groups)",
                   c("0%", "5%", "10%", "15%", "20%", "30%", "50%", "100%"),
-                  c("30%")),
+                  c("20%")),
       wellPanel("Number of matched samples:", textOutput("n.matched")),
       selectInput("rho", "Correlation",
                   c(-0.9, -0.5, -0.25, 0, 0.25, 0.5, 0.9),
@@ -30,7 +30,8 @@ fluidPage(
                        "Boot.5th.quantile", "Boot.20th.quantile",
                        "Freq.20th.quantile", "Bayes.arcsine", "Bayes.Jeffreys",
                        "Bayes.unif"),
-                     c("Pearson", "EM.alg", "Bayes.Jeffreys"), multiple=T),
+                     c("Pearson", "EM.alg", "Bayes.Jeffreys", "Freq.20th.quantile"),
+                     multiple=T),
       wellPanel(
         "Power plot settings",
         checkboxInput("plot.oracle", "Plot 'oracle' test", value=T),
