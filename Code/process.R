@@ -12,10 +12,7 @@ library(tidyr)
 library(here)
 
 # load previously-saved simulation results
-results <- readRDS(here("DataRaw/simulation_results_2023-02-03.rds"))
-
-# temporary fix for NaNs and Infs (occurs in shrunken estimator)
-results[!is.finite(results)] <- NA
+results <- readRDS(here("DataRaw/simulation_results_2023-02-15.rds"))
 
 # pivot to long data frame
 df_results_long <- data.frame(results) %>%
@@ -23,7 +20,8 @@ df_results_long <- data.frame(results) %>%
   rename(Estimate=value)
 
 # warn of invalid estimates
-n_ests_invalid <- sum(df_results_long$Estimate > 1 | df_results_long$Estimate < -1, na.rm=T)
+n_ests_invalid <- sum(
+  df_results_long$Estimate > 1 | df_results_long$Estimate < -1, na.rm=T)
 warning(paste0("Number of invalid correlation estimates: ", n_ests_invalid))
 
 # flag all "Failures" as cases where valid correlation was not estimated
@@ -98,12 +96,15 @@ df_performance <- df_results_long %>%
   ungroup()
 
 # save processed data
-saveRDS(df_results_long, here("DataProcessed/all_2023-02-03.rds"))
-saveRDS(df_failures, here("DataProcessed/failures_2023-02-03.rds"))
-saveRDS(df_inference, here("DataProcessed/inference_2023-02-03.rds"))
-saveRDS(df_performance, here("DataProcessed/performance_2023-02-03.rds"))
+saveRDS(df_results_long, here("DataProcessed/all_2023-02-15.rds"))
+saveRDS(df_failures, here("DataProcessed/failures_2023-02-15.rds"))
+saveRDS(df_inference, here("DataProcessed/inference_2023-02-15.rds"))
+saveRDS(df_performance, here("DataProcessed/performance_2023-02-15.rds"))
 
 # save 'lite' version of long data for improved speed
 set.seed(2023)
-df_results_lite <- sample_n(df_results_long, 1000000)
-saveRDS(df_results_lite, here("DataProcessed/lite_2023-02-03.rds"))
+df_results_lite <- df_results_long %>%
+  group_by(Method, Distribution, Rho, Delta, N, Prop.matched, M) %>%
+  slice_sample(prop=0.05) %>%
+  ungroup()
+saveRDS(df_results_lite, here("DataProcessed/lite_2023-02-15.rds"))
