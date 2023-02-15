@@ -20,7 +20,7 @@ N <- c(10, 20, 50, 100, 200)
 PROP.MATCHED <- c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5, 1)
 SIGMA.X <- c(1)
 SIGMA.Y <- c(1)
-REP <- 1:10000
+REP <- 1:1000
 
 # register parallel backend
 cl <- detectCores() - 2
