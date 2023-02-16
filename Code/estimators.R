@@ -114,7 +114,8 @@ est.cor.emalg <- function(X, Y, n.matched, RHO.INIT=0, MAX.ITER=500) {
     crossprod.obs <- crossprod(X.matched, Y.matched)[1, 1]
   } else {
     # @Ryan: is it correct to assume the cross product is zero?
-    crossprod.obs <- 0
+    # crossprod.obs <- 0
+    return(NA)
   } 
   
   # compute MLES of mu, sigma
