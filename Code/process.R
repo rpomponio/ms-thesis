@@ -74,6 +74,7 @@ df_inference <- df_results_long %>%
     t.ind = d.bar / sqrt( sum.sqs / (N * (N - 1)) ),
     t.mod = suppressWarnings(ifelse(Failure==1, NA, t.ind / sqrt(1 - Estimate))),
     p.value = 2 * pt(abs(t.mod), df=(2 * N - 2), lower.tail=F),
+    # To-do: calculate SEs using denominator of modified t stat
     d.lwr = NA, # @Ryan: how to compute Conf Int of mean for modified test?
     d.upr = NA) %>%
   group_by(Method, Distribution, Rho, Delta, N, Prop.matched, M) %>%
