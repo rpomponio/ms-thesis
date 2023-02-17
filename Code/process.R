@@ -12,7 +12,10 @@ library(tidyr)
 library(here)
 
 # load previously-saved simulation results
-results <- readRDS(here("DataRaw/simulation_results_2023-02-15.rds"))
+results <- rbind(
+  readRDS(here("DataRaw/simulation_results_2023-02-15_seed2023.rds")),
+  readRDS(here("DataRaw/simulation_results_2023-02-15_seed2024.rds")),
+  readRDS(here("DataRaw/simulation_results_2023-02-16_seed2025.rds")))
 
 # pivot to long data frame
 df_results_long <- data.frame(results) %>%
@@ -71,14 +74,18 @@ df_inference <- df_results_long %>%
   mutate(
     d.bar = Mu.hat.X - Mu.hat.Y,
     sum.sqs = (Sigma.sqd.hat.X * N) + (Sigma.sqd.hat.Y * N),
-    t.ind = d.bar / sqrt( sum.sqs / (N * (N - 1)) ),
+    se.ind = sqrt( sum.sqs / (N * (N - 1)) ),
+    se.mod = suppressWarnings(ifelse(Failure==1, NA, se.ind * sqrt(1 - Estimate))),
+    t.ind = d.bar / se.ind,
     t.mod = suppressWarnings(ifelse(Failure==1, NA, t.ind / sqrt(1 - Estimate))),
     p.value = 2 * pt(abs(t.mod), df=(2 * N - 2), lower.tail=F),
-    # To-do: calculate SEs using denominator of modified t stat
-    d.lwr = NA, # @Ryan: how to compute Conf Int of mean for modified test?
-    d.upr = NA) %>%
+    d.lwr = d.bar - 1.96 * se.mod,
+    d.upr = d.bar + 1.96 * se.mod) %>%
   group_by(Method, Distribution, Rho, Delta, N, Prop.matched, M) %>%
-  summarise(Rejection.rate=mean(p.value < 0.05, na.rm=T)) %>%
+  summarise(
+    Rejection.rate=mean(p.value < 0.05, na.rm=T),
+    SE.mean=mean(se.mod, na.rm=T),
+    Coverage.rate=mean(Delta >= d.lwr & Delta <= d.upr, na.rm=T)) %>%
   ungroup()
 
 # calculate bias and MSE (accounting for effective correlation in ordinal data)
@@ -97,10 +104,10 @@ df_performance <- df_results_long %>%
   ungroup()
 
 # save processed data
-saveRDS(df_results_long, here("DataProcessed/all_2023-02-15.rds"))
-saveRDS(df_failures, here("DataProcessed/failures_2023-02-15.rds"))
-saveRDS(df_inference, here("DataProcessed/inference_2023-02-15.rds"))
-saveRDS(df_performance, here("DataProcessed/performance_2023-02-15.rds"))
+saveRDS(df_results_long, here("DataProcessed/all_2023-02-17.rds"))
+saveRDS(df_failures, here("DataProcessed/failures_2023-02-17.rds"))
+saveRDS(df_inference, here("DataProcessed/inference_2023-02-17.rds"))
+saveRDS(df_performance, here("DataProcessed/performance_2023-02-17.rds"))
 
 # save 'lite' version of long data for improved speed
 set.seed(2023)
@@ -108,4 +115,4 @@ df_results_lite <- df_results_long %>%
   group_by(Method, Distribution, Rho, Delta, N, Prop.matched, M) %>%
   slice_sample(prop=0.05) %>%
   ungroup()
-saveRDS(df_results_lite, here("DataProcessed/lite_2023-02-15.rds"))
+saveRDS(df_results_lite, here("DataProcessed/lite_2023-02-17.rds"))
