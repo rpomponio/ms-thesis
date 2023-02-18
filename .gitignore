@@ -41,9 +41,6 @@ vignettes/*.pdf
 # Mac files
 .DS_Store
 
-# large results
-DataRaw/simulation_results_2023-01-1*
-DataRaw/simulation_results_2023-01-2*
-DataRaw/simulation_results_2023-01-3*
-DataRaw/simulation_results_2023-02-*
-DataProcessed/*2023-02-*
+# prevent results for now
+DataRaw/*
+DataProcessed/*
