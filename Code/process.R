@@ -13,9 +13,17 @@ library(here)
 
 # load previously-saved simulation results
 results <- rbind(
+  readRDS(here("DataRaw/simulation_results_2023-02-19_seed2020.rds")),
+  readRDS(here("DataRaw/simulation_results_2023-02-19_seed2021.rds")),
+  readRDS(here("DataRaw/simulation_results_2023-02-19_seed2022.rds")),
   readRDS(here("DataRaw/simulation_results_2023-02-15_seed2023.rds")),
   readRDS(here("DataRaw/simulation_results_2023-02-15_seed2024.rds")),
-  readRDS(here("DataRaw/simulation_results_2023-02-16_seed2025.rds")))
+  readRDS(here("DataRaw/simulation_results_2023-02-16_seed2025.rds")),
+  readRDS(here("DataRaw/simulation_results_2023-02-17_seed2026.rds")),
+  readRDS(here("DataRaw/simulation_results_2023-02-17_seed2027.rds")),
+  readRDS(here("DataRaw/simulation_results_2023-02-18_seed2028.rds")),
+  readRDS(here("DataRaw/simulation_results_2023-02-18_seed2029.rds"))
+  )
 
 # pivot to long data frame
 df_results_long <- data.frame(results) %>%
@@ -104,10 +112,10 @@ df_performance <- df_results_long %>%
   ungroup()
 
 # save processed data
-saveRDS(df_results_long, here("DataProcessed/all_2023-02-17.rds"))
-saveRDS(df_failures, here("DataProcessed/failures_2023-02-17.rds"))
-saveRDS(df_inference, here("DataProcessed/inference_2023-02-17.rds"))
-saveRDS(df_performance, here("DataProcessed/performance_2023-02-17.rds"))
+saveRDS(df_results_long, here("DataProcessed/all_2023-02-20.rds"))
+saveRDS(df_failures, here("DataProcessed/failures_2023-02-20.rds"))
+saveRDS(df_inference, here("DataProcessed/inference_2023-02-20.rds"))
+saveRDS(df_performance, here("DataProcessed/performance_2023-02-20.rds"))
 
 # save 'lite' version of long data for improved speed
 set.seed(2023)
@@ -115,4 +123,4 @@ df_results_lite <- df_results_long %>%
   group_by(Method, Distribution, Rho, Delta, N, Prop.matched, M) %>%
   slice_sample(prop=0.05) %>%
   ungroup()
-saveRDS(df_results_lite, here("DataProcessed/lite_2023-02-17.rds"))
+saveRDS(df_results_lite, here("DataProcessed/lite_2023-02-20.rds"))
