@@ -25,6 +25,9 @@ results <- rbind(
   readRDS(here("DataRaw/simulation_results_2023-02-18_seed2029.rds"))
   )
 
+# temp fix : assign NA wherever EM algorithm had zero matched samples
+results[(results[, "M"] == 0), "EM.alg"] <- NA
+
 # pivot to long data frame
 df_results_long <- data.frame(results) %>%
   pivot_longer(cols=Rho.hat:Bayes.arcsine, names_to="Method") %>%
@@ -53,6 +56,10 @@ df_failures <- df_results_long %>%
     Num.failures=sum(Failure),
     Failure.rate=mean(Failure)) %>%
   ungroup()
+
+# save processed data and clear from memory
+saveRDS(df_failures, here("DataProcessed/failures_2023-02-20.rds"))
+rm(df_failures)
 
 # for 'oracle' inference method: use true correlation (or effective correlation)
 df_oracle <- df_results_long %>%
@@ -96,6 +103,10 @@ df_inference <- df_results_long %>%
     Coverage.rate=mean(Delta >= d.lwr & Delta <= d.upr, na.rm=T)) %>%
   ungroup()
 
+# save processed data and clear from memory
+saveRDS(df_inference, here("DataProcessed/inference_2023-02-20.rds"))
+rm(df_inference)
+
 # calculate bias and MSE (accounting for effective correlation in ordinal data)
 df_performance <- df_results_long %>%
   mutate(Error=case_when(
@@ -111,11 +122,12 @@ df_performance <- df_results_long %>%
   summarise(Bias=mean(Error, na.rm=T), Mean.sqd.error=mean(Error^2, na.rm=T)) %>%
   ungroup()
 
-# save processed data
-saveRDS(df_results_long, here("DataProcessed/all_2023-02-20.rds"))
-saveRDS(df_failures, here("DataProcessed/failures_2023-02-20.rds"))
-saveRDS(df_inference, here("DataProcessed/inference_2023-02-20.rds"))
+# save processed data and clear from memory
 saveRDS(df_performance, here("DataProcessed/performance_2023-02-20.rds"))
+rm(df_performance)
+
+# save processed data (commented out because too big)
+# saveRDS(df_results_long, here("DataProcessed/all_2023-02-20.rds"))
 
 # save 'lite' version of long data for improved speed
 set.seed(2023)
