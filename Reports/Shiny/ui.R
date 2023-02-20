@@ -33,7 +33,7 @@ fluidPage(
                      c("Pearson", "EM.alg", "Bayes.Jeffreys", "Freq.20th.quantile"),
                      multiple=T),
       wellPanel(
-        "Power plot settings",
+        "SE/Power plot settings",
         checkboxInput("plot.oracle", "Plot 'oracle' test", value=T),
         checkboxInput("plot.indep", "Plot independent t-test", value=F)
       )
@@ -44,12 +44,21 @@ fluidPage(
         tabPanel("Failures", verticalLayout(
           p("Failures were recorded when an invalid correlation estimate was obtained."),
           DT::dataTableOutput("failures"))),
-        tabPanel("Bias", plotOutput("biasplot", height="600px")),
-        tabPanel("Variance", plotOutput("varianceplot", height="600px")),
+        tabPanel("Bias", verticalLayout(
+          plotOutput("biasplot", height="600px"),
+          DT::dataTableOutput("biastable"))),
+        tabPanel("Variance", verticalLayout(
+          plotOutput("varianceplot", height="600px"),
+          DT::dataTableOutput("variancetable"))),
         tabPanel("Comparison", verticalLayout(
           p("Compares the first two estimators selected."),
           plotOutput("comparisonplot", height="600px"))),
-        tabPanel("Power", plotOutput("powerplot", height="600px")),
+        tabPanel("SE", verticalLayout(
+          plotOutput("seplot", height="600px"),
+          DT::dataTableOutput("setable"))),
+        tabPanel("Power", verticalLayout(
+          plotOutput("powerplot", height="600px"),
+          DT::dataTableOutput("powertable"))),
         tabPanel("Estimators", DT::dataTableOutput("methods"))
       )
     )

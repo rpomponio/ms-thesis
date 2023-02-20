@@ -107,4 +107,13 @@ df_inference %>%
        y="Standard Error (mean)",
        caption="Results averaged over 10,000 datasets at each point.")
 
-
+# how to present this data in a table
+df_inference %>%
+  filter(Distribution==1, Delta==0, N==10,
+         Method %in% c("Oracle", "Independent", "Pearson",
+                       "EM.alg", "Bayes.Jeffreys"),
+         Prop.matched == 0.5) %>%
+  select(Delta, Method, Rho, N, M, SE.mean) %>%
+  tidyr::pivot_wider(names_prefix="Rho=", names_from=Rho, values_from=SE.mean) %>%
+  DT::datatable(options=list(pageLength=15, dom='tip'), caption="SE") %>%
+  DT::formatRound(columns=5:11)

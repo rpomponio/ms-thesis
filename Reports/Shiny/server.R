@@ -16,10 +16,10 @@ library(ggplot2)
 theme_set(theme_classic2(base_size=18))
 
 # load processed results
-df_results_long <- readRDS(here("DataProcessed/lite_2023-02-15.rds"))
-df_failures <- readRDS(here("DataProcessed/failures_2023-02-15.rds"))
-df_inference <- readRDS(here("DataProcessed/inference_2023-02-15.rds"))
-df_performance <- readRDS(here("DataProcessed/performance_2023-02-15.rds"))
+df_results_long <- readRDS(here("DataProcessed/lite_2023-02-20.rds"))
+df_failures <- readRDS(here("DataProcessed/failures_2023-02-20.rds"))
+df_inference <- readRDS(here("DataProcessed/inference_2023-02-20.rds"))
+df_performance <- readRDS(here("DataProcessed/performance_2023-02-20.rds"))
 
 # Define server logic required to draw a histogram
 function(input, output, session) {
@@ -103,7 +103,22 @@ function(input, output, session) {
            subtitle=sim_note,
            x="True correlation",
            y="Bias (Estimated minus true value)",
-           caption="Results averaged over 1,000 datasets at each point.")
+           caption="Results averaged over 10,000 datasets at each point.")
+  })
+  
+  output$biastable <- DT::renderDataTable({
+    
+    df_performance %>%
+      filter(Distribution==ifelse(input$distribution=="Normal", 1, 2),
+             Delta %in% as.numeric(input$delta),
+             N == as.numeric(input$n),
+             Method %in% input$method,
+             Prop.matched == vals$prop.matched) %>%
+      select(Delta, Method, Rho, N, M, Bias) %>%
+      tidyr::pivot_wider(names_from=Rho, values_from=Bias) %>%
+      DT::datatable(options=list(pageLength=15, dom='tip'),
+                    caption="Bias for values of true correlation") %>%
+      DT::formatRound(columns=5:11)
   })
   
   output$varianceplot <- renderPlot({
@@ -127,9 +142,78 @@ function(input, output, session) {
            subtitle=sim_note,
            x="True correlation",
            y="Mean squared error",
-           caption="Results averaged over 1,000 datasets at each point.")
+           caption="Results averaged over 10,000 datasets at each point.")
   })
   
+  output$variancetable <- DT::renderDataTable({
+    
+    df_performance %>%
+      filter(Distribution==ifelse(input$distribution=="Normal", 1, 2),
+             Delta %in% as.numeric(input$delta),
+             N == as.numeric(input$n),
+             Method %in% input$method,
+             Prop.matched == vals$prop.matched) %>%
+      select(Delta, Method, Rho, N, M, Mean.sqd.error) %>%
+      tidyr::pivot_wider(names_from=Rho, values_from=Mean.sqd.error) %>%
+      DT::datatable(options=list(pageLength=15, dom='tip'),
+                    caption="MSE for values of true correlation") %>%
+      DT::formatRound(columns=5:11)
+  })
+  
+  output$seplot <- renderPlot({
+    
+    addl.methods <- c()
+    if (input$plot.oracle) {
+      addl.methods <- c(addl.methods, "Oracle")
+    }
+    if (input$plot.indep) {
+      addl.methods <- c(addl.methods, "Independent")
+    }
+    
+    sim_note <- paste0("Simulated with n=", as.numeric(input$n),
+                       ", m=", vals$n.matched)
+    
+    df_inference %>%
+      filter(Distribution==ifelse(input$distribution=="Normal", 1, 2),
+             Delta %in% as.numeric(input$delta),
+             N == as.numeric(input$n),
+             Method %in% c(addl.methods, input$method),
+             Prop.matched == vals$prop.matched) %>%
+      ggplot(aes(col=Method, x=Rho, y=SE.mean)) +
+      geom_hline(yintercept=0, linetype="dashed") +
+      facet_wrap(~ Delta, scales="free_y") +
+      geom_line() +
+      geom_point(size=5) +
+      scale_x_continuous(breaks=unique(df_inference$Rho)) +
+      labs(title="Avgerage standard errors by true correlation",
+           subtitle=sim_note,
+           x="True correlation",
+           y="Standard Error (mean)",
+           caption="Results averaged over 10,000 datasets at each point.")
+  })
+  
+  output$setable <- DT::renderDataTable({
+    
+    addl.methods <- c()
+    if (input$plot.oracle) {
+      addl.methods <- c(addl.methods, "Oracle")
+    }
+    if (input$plot.indep) {
+      addl.methods <- c(addl.methods, "Independent")
+    }
+    
+    df_inference %>%
+      filter(Distribution==ifelse(input$distribution=="Normal", 1, 2),
+             Delta %in% as.numeric(input$delta),
+             N == as.numeric(input$n),
+             Method %in% c(addl.methods, input$method),
+             Prop.matched == vals$prop.matched) %>%
+      select(Delta, Method, Rho, N, M, SE.mean) %>%
+      tidyr::pivot_wider(names_from=Rho, values_from=SE.mean) %>%
+      DT::datatable(options=list(pageLength=15, dom='tip'),
+                    caption="Mean SEs for values of true correlation") %>%
+      DT::formatRound(columns=5:11)
+  })
 
   output$powerplot <- renderPlot({
     
@@ -160,7 +244,30 @@ function(input, output, session) {
            subtitle=sim_note,
            x="True correlation",
            y="Prop. rejected null hypotheses",
-           caption="Results averaged over 1,000 datasets at each point.")
+           caption="Results averaged over 10,000 datasets at each point.")
+  })
+  
+  output$powertable <- DT::renderDataTable({
+    
+    addl.methods <- c()
+    if (input$plot.oracle) {
+      addl.methods <- c(addl.methods, "Oracle")
+    }
+    if (input$plot.indep) {
+      addl.methods <- c(addl.methods, "Independent")
+    }
+    
+    df_inference %>%
+      filter(Distribution==ifelse(input$distribution=="Normal", 1, 2),
+             Delta %in% as.numeric(input$delta),
+             N == as.numeric(input$n),
+             Method %in% c(addl.methods, input$method),
+             Prop.matched == vals$prop.matched) %>%
+      select(Delta, Method, Rho, N, M, Rejection.rate) %>%
+      tidyr::pivot_wider(names_from=Rho, values_from=Rejection.rate) %>%
+      DT::datatable(options=list(pageLength=15, dom='tip'),
+                    caption="Rejection rate for values of true correlation") %>%
+      DT::formatRound(columns=5:11)
   })
   
   output$comparisonplot <- renderPlot({
@@ -178,7 +285,7 @@ function(input, output, session) {
       geom_smooth(method="lm", formula="y ~ x", se=F) +
       geom_abline(intercept=0, slope=1, linetype="dashed") +
       labs(title="Scatterplot of association between estimators",
-           caption="Results sampled from 1,000 datasets for efficiency.")
+           caption="Results sampled from 10,000 datasets for efficiency.")
     
   })
   
