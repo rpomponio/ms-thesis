@@ -188,7 +188,7 @@ function(input, output, session) {
       labs(title="Avgerage standard errors by true correlation",
            subtitle=sim_note,
            x="True correlation",
-           y="Standard Error (mean)",
+           y="Standard Error",
            caption="Results averaged over 10,000 datasets at each point.")
   })
   

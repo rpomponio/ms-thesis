@@ -47,7 +47,7 @@ fluidPage(
         tabPanel("Bias", verticalLayout(
           plotOutput("biasplot", height="600px"),
           DT::dataTableOutput("biastable"))),
-        tabPanel("Variance", verticalLayout(
+        tabPanel("MSE", verticalLayout(
           plotOutput("varianceplot", height="600px"),
           DT::dataTableOutput("variancetable"))),
         tabPanel("Comparison", verticalLayout(
