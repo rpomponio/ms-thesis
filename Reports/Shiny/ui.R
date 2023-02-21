@@ -26,10 +26,8 @@ fluidPage(
                   c(0.5)),
       selectizeInput("method", "Estimators",
                      c("Rho.hat", "Pearson", "Max.conserv", "EM.alg",
-                       "Shrunken", "Unbiased", "Boot.mean",
-                       "Boot.5th.quantile", "Boot.20th.quantile",
-                       "Freq.20th.quantile", "Bayes.arcsine", "Bayes.Jeffreys",
-                       "Bayes.unif"),
+                       "Shrunken", "Unbiased", "Freq.20th.quantile",
+                       "Bayes.arcsine", "Bayes.Jeffreys", "Bayes.unif"),
                      c("Pearson", "EM.alg", "Bayes.Jeffreys", "Freq.20th.quantile"),
                      multiple=T),
       wellPanel(
