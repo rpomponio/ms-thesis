@@ -44,6 +44,7 @@ fluidPage(
           DT::dataTableOutput("failures"))),
         tabPanel("Bias", verticalLayout(
           plotOutput("biasplot", height="600px"),
+          # downloadButton("save", "Save plot"),
           DT::dataTableOutput("biastable"))),
         tabPanel("MSE", verticalLayout(
           plotOutput("varianceplot", height="600px"),

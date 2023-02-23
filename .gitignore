@@ -42,5 +42,5 @@ vignettes/*.pdf
 .DS_Store
 
 # prevent results for now
-DataRaw/*
-DataProcessed/*
+DataRaw/*.rds
+DataProcessed/*.rds
