@@ -118,7 +118,7 @@ function(input, output, session) {
       tidyr::pivot_wider(names_from=Rho, values_from=Bias) %>%
       DT::datatable(options=list(pageLength=15, dom='tip'),
                     caption="Bias for values of true correlation") %>%
-      DT::formatRound(columns=5:11)
+      DT::formatRound(columns=5:11, digits=3)
   })
   
   output$varianceplot <- renderPlot({
@@ -157,7 +157,7 @@ function(input, output, session) {
       tidyr::pivot_wider(names_from=Rho, values_from=Mean.sqd.error) %>%
       DT::datatable(options=list(pageLength=15, dom='tip'),
                     caption="MSE for values of true correlation") %>%
-      DT::formatRound(columns=5:11)
+      DT::formatRound(columns=5:11, digits=3)
   })
   
   output$seplot <- renderPlot({
@@ -212,7 +212,7 @@ function(input, output, session) {
       tidyr::pivot_wider(names_from=Rho, values_from=SE.mean) %>%
       DT::datatable(options=list(pageLength=15, dom='tip'),
                     caption="Mean SEs for values of true correlation") %>%
-      DT::formatRound(columns=5:11)
+      DT::formatRound(columns=5:11, digits=3)
   })
 
   output$powerplot <- renderPlot({
@@ -267,7 +267,7 @@ function(input, output, session) {
       tidyr::pivot_wider(names_from=Rho, values_from=Rejection.rate) %>%
       DT::datatable(options=list(pageLength=15, dom='tip'),
                     caption="Rejection rate for values of true correlation") %>%
-      DT::formatRound(columns=5:11)
+      DT::formatRound(columns=5:11, digits=3)
   })
   
   output$comparisonplot <- renderPlot({
