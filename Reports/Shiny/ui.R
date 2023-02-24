@@ -11,7 +11,7 @@ library(shiny)
 
 # Define UI for application that draws a histogram
 fluidPage(
-  titlePanel("Simulation Results"),
+  titlePanel("Simulation Results (lite version)"),
   sidebarLayout(
     sidebarPanel(
       selectInput("distribution", "Distribution type", c("Normal", "Ordinal")),
@@ -49,9 +49,9 @@ fluidPage(
         tabPanel("MSE", verticalLayout(
           plotOutput("varianceplot", height="600px"),
           DT::dataTableOutput("variancetable"))),
-        tabPanel("Comparison", verticalLayout(
-          p("Compares the first two estimators selected."),
-          plotOutput("comparisonplot", height="600px"))),
+        # tabPanel("Comparison", verticalLayout(
+        #   p("Compares the first two estimators selected."),
+        #   plotOutput("comparisonplot", height="600px"))),
         tabPanel("SE", verticalLayout(
           plotOutput("seplot", height="600px"),
           DT::dataTableOutput("setable"))),

@@ -44,3 +44,6 @@ vignettes/*.pdf
 # prevent results for now
 DataRaw/*.rds
 DataProcessed/*.rds
+!DataProcessed/failures_2023-02-20.rds
+!DataProcessed/inference_2023-02-20.rds
+!DataProcessed/performance_2023-02-20.rds
