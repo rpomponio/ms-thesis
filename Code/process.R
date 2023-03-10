@@ -71,7 +71,10 @@ df_results_long <- df_results_long %>%
 # in ordinal, correct undefined failures due to zero variance in matched samples
 df_pearson_mod <- df_results_long %>%
   filter(Method %in% c("Pearson", "Max.conserv")) %>%
-  pivot_wider(id_cols=Repetition:Sigma.sqd.hat.Y, names_from=Method,
+  group_by(Method, Distribution, Rho, Delta, N, Prop.matched, M) %>%
+  mutate(Index=1:n()) %>%
+  ungroup() %>%
+  pivot_wider(id_cols=c(Index, Repetition:Sigma.sqd.hat.Y), names_from=Method,
               values_from=c(Estimate, Failure.type)) %>%
   mutate(Estimate_Pearson=case_when(
     Distribution==2 & M>=2 & Failure.type_Pearson=="Undefined" ~ Estimate_Max.conserv,
@@ -79,13 +82,16 @@ df_pearson_mod <- df_results_long %>%
   mutate(Failure.type_Pearson=case_when(
     Distribution==2 & M>=2 & Failure.type_Pearson=="Undefined" ~ "Nonfailure",
     TRUE ~ Failure.type_Pearson)) %>%
-  select(-contains("Max.conserv")) %>%
+  select(-contains("Max.conserv"), -Index) %>%
   rename(Estimate=Estimate_Pearson, Failure.type=Failure.type_Pearson) %>%
   mutate(Method="Pearson.mod")
 
 df_quantile_mod <- df_results_long %>%
   filter(Method %in% c("Freq.20th.quantile", "Max.conserv")) %>%
-  pivot_wider(id_cols=Repetition:Sigma.sqd.hat.Y, names_from=Method,
+  group_by(Method, Distribution, Rho, Delta, N, Prop.matched, M) %>%
+  mutate(Index=1:n()) %>%
+  ungroup() %>%
+  pivot_wider(id_cols=c(Index, Repetition:Sigma.sqd.hat.Y), names_from=Method,
               values_from=c(Estimate, Failure.type)) %>%
   mutate(Estimate_Freq.20th.quantile=case_when(
     Distribution==2 & M>=4 & Failure.type_Freq.20th.quantile=="Undefined" ~
@@ -95,7 +101,7 @@ df_quantile_mod <- df_results_long %>%
     Distribution==2 & M>=4 & Failure.type_Freq.20th.quantile=="Undefined" ~
       "Nonfailure",
     TRUE ~ Failure.type_Freq.20th.quantile)) %>%
-  select(-contains("Max.conserv")) %>%
+  select(-contains("Max.conserv"), -Index) %>%
   rename(Estimate=Estimate_Freq.20th.quantile,
          Failure.type=Failure.type_Freq.20th.quantile) %>%
   mutate(Method="Freq.20th.quantile.mod")

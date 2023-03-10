@@ -14,15 +14,184 @@ library(kableExtra, warn.conflicts=FALSE)
 library(here)
 
 # load processed data
-# df_results_long <- readRDS(here("DataProcessed/all_2023-02-20.rds"))
-# df_failures <- readRDS(here("DataProcessed/failures_2023-02-20.rds"))
-# df_inference <- readRDS(here("DataProcessed/inference_2023-02-20.rds"))
-# df_performance <- readRDS(here("DataProcessed/performance_2023-02-20.rds"))
+df_failures <- readRDS(here("DataProcessed/failures_2023-02-20.rds"))
+df_inference <- readRDS(here("DataProcessed/inference_2023-02-20.rds"))
+df_performance <- readRDS(here("DataProcessed/performance_2023-02-20.rds"))
+
+##### Bias plots #####
+
+# plot bias versus true correlation
+df_performance %>%
+  filter(Distribution==1,
+         Delta==0,
+         N==20,
+         Method %in% c("Bayes.arcsine", "EM.alg", "Freq.20th.quantile", "Pearson"),
+         Prop.matched==0.2) %>%
+  mutate(lower=Bias-Bias.mce, upper=Bias+Bias.mce) %>%
+  ggplot(aes(col=Method, x=Rho, y=Bias)) +
+  geom_hline(yintercept=0, linetype="dashed") +
+  # facet_wrap(~ Delta, scales="free_y") +
+  geom_line() +
+  geom_errorbar(aes(ymin=lower, ymax=upper), width=0.05, alpha=0.25) +
+  geom_point(size=5) +
+  scale_x_continuous(breaks=unique(df_performance$Rho[df_performance$Distribution==1])) +
+  labs(title="Bias of estimators by true correlation",
+       subtitle="Simulated with n=20, m=4",
+       x="True correlation",
+       y="Bias (Estimated minus true value)",
+       caption="Results averaged over 10,000 datasets at each point.")
+
+# plot bias versus number of matched samples
+df_performance %>%
+  filter(Distribution==1,
+         Delta==0,
+         N==20,
+         Method %in% c("Bayes.arcsine", "EM.alg", "Freq.20th.quantile", "Pearson")) %>%
+  mutate(Rho = round(Rho, 2)) %>%
+  ggplot(aes(col=Method, x=M, y=Bias)) +
+  geom_hline(yintercept=0, linetype="dashed") +
+  facet_wrap(~ Rho) +
+  geom_line() +
+  geom_point(size=2) +
+  scale_x_continuous(breaks=seq(1, 19, 2)) +
+  labs(title="Bias of estimators by number of matched samples",
+       subtitle="Simulated with n=20, m=4",
+       x="Number of matched samples",
+       y="Bias (Estimated minus true value)",
+       caption="Results averaged over 10,000 datasets at each point.")
+
+##### MSE plots #####
+
+df_performance %>%
+  filter(Distribution==1,
+         Delta==0,
+         N==20,
+         Method %in% c("Bayes.arcsine", "EM.alg", "Freq.20th.quantile", "Pearson"),
+         Prop.matched==0.2) %>%
+  mutate(
+    lower=Mean.sqd.error-Mean.sqd.error.mce,
+    upper=Mean.sqd.error+Mean.sqd.error.mce) %>%
+  ggplot(aes(col=Method, x=Rho, y=Mean.sqd.error)) +
+  geom_hline(yintercept=0, linetype="dashed") +
+  # facet_wrap(~ Delta, scales="free_y") +
+  geom_line() +
+  geom_errorbar(aes(ymin=lower, ymax=upper), width=0.05, alpha=0.25) +
+  geom_point(size=5) +
+  scale_x_continuous(breaks=unique(df_performance$Rho[df_performance$Distribution==1])) +
+  labs(title="MSE of estimators by true correlation",
+       subtitle="Simulated with n=20, m=4",
+       x="True correlation",
+       y="Mean squared error",
+       caption="Results averaged over 10,000 datasets at each point.")
+
+##### SE Ratio plots #####
+
+df_oracle <- df_inference %>%
+  filter(Distribution==1,
+         Delta==0,
+         N==20,
+         Method=="Oracle",
+         Prop.matched==0.2) %>%
+  rename(SE.mean.oracle=SE.mean, Rejection.rate.oracle=Rejection.rate) %>%
+  select(Distribution:M, SE.mean.oracle, Rejection.rate.oracle)
+
+# plot the oracle SE by true correlation
+df_oracle %>%
+  ggplot(aes(x=Rho, y=SE.mean.oracle)) +
+  geom_hline(yintercept=0, linetype="dashed") +
+  # facet_wrap(~ Delta, scales="free_y") +
+  geom_line() +
+  geom_point(size=5) +
+  scale_x_continuous(breaks=unique(df_performance$Rho[df_performance$Distribution==1])) +
+  labs(title="Oracle SE by true correlation",
+       subtitle="Simulated with n=20, m=4",
+       x="True correlation",
+       y="Standard Error",
+       caption="Results averaged over 10,000 datasets at each point.")
+
+# plot the ratio of SE:Oracle SE by true correlation
+df_inference %>%
+  filter(Distribution==1,
+         Delta==0,
+         N==20,
+         Method %in% c("Bayes.arcsine", "EM.alg", "Freq.20th.quantile", "Pearson"),
+         Prop.matched==0.2) %>%
+  left_join(df_oracle) %>%
+  mutate(SE.mean.ratio=SE.mean / SE.mean.oracle) %>%
+  ggplot(aes(col=Method, x=Rho, y=SE.mean.ratio)) +
+  geom_hline(yintercept=1, linetype="dashed") +
+  # facet_wrap(~ Delta, scales="free_y") +
+  geom_line() +
+  geom_point(size=5) +
+  scale_x_continuous(breaks=unique(df_performance$Rho[df_performance$Distribution==1])) +
+  labs(title="Ratio of SE:Oracle SE by true correlation",
+       subtitle="Simulated with n=20, m=4",
+       x="True correlation",
+       y="Standard Error Ratio",
+       caption="Results averaged over 10,000 datasets at each point.")
+
+##### Rejection rate plots #####
+
+# plot the oracle Type I error rate by true correlation
+df_oracle %>%
+  ggplot(aes(x=Rho, y=Rejection.rate.oracle)) +
+  geom_hline(yintercept=0.05, linetype="dashed") +
+  # facet_wrap(~ Delta, scales="free_y") +
+  ylim(c(0, 0.2)) +
+  geom_line() +
+  geom_point(size=5) +
+  scale_x_continuous(breaks=unique(df_performance$Rho[df_performance$Distribution==1])) +
+  labs(title="Rejection rate of oracle test by true correlation",
+       subtitle="Simulated with n=20, m=4",
+       x="True correlation",
+       y="Prop. rejected null hypotheses",
+       caption="Results averaged over 10,000 datasets at each point.")
+
+# plot the Type I error rate by true correlation
+df_inference %>%
+  filter(Distribution==1,
+         Delta %in% c(0, 0.25),
+         N==20,
+         Method %in% c("Bayes.arcsine", "EM.alg", "Freq.20th.quantile", "Pearson"),
+         Prop.matched==0.2) %>%
+  ggplot(aes(col=Method, x=Rho, y=Rejection.rate)) +
+  geom_hline(yintercept=0.05, linetype="dashed") +
+  facet_wrap(~ Delta, scales="free_y") +
+  geom_line() +
+  geom_point(size=5) +
+  scale_x_continuous(breaks=unique(df_performance$Rho[df_performance$Distribution==1])) +
+  labs(title="Rejection rate of hypoth. tests by true correlation",
+       subtitle="Simulated with n=20, m=4",
+       x="True correlation",
+       y="Prop. rejected null hypotheses",
+       caption="Results averaged over 10,000 datasets at each point.")
+
+# compare rejection rate to oracle rate
+df_inference %>%
+  filter(Distribution==1,
+         Delta==0,
+         N==20,
+         Method %in% c("Bayes.arcsine", "EM.alg", "Freq.20th.quantile", "Pearson"),
+         Prop.matched==0.2) %>%
+  left_join(df_oracle) %>%
+  mutate(Rejection.rate.ratio=Rejection.rate / Rejection.rate.oracle) %>%
+  ggplot(aes(col=Method, x=Rho, y=Rejection.rate.ratio)) +
+  geom_hline(yintercept=1, linetype="dashed") +
+  # facet_wrap(~ Delta, scales="free_y") +
+  geom_line() +
+  geom_point(size=5) +
+  scale_x_continuous(breaks=unique(df_performance$Rho[df_performance$Distribution==1])) +
+  labs(title="Ratio of Rej. rate:Oracle rej. rate by true correlation",
+       subtitle="Simulated with n=20, m=4",
+       x="True correlation",
+       y="Ratio of rejected null hypotheses",
+       caption="Results averaged over 10,000 datasets at each point.")
+
 
 ##### Summarize failure rates by simulation setting #####
 
 tab_failures <- df_failures %>%
-  filter(Distribution==2,
+  filter(Distribution==1,
          Delta==0,
          N <= 50,
          Method %in% c("Bayes.arcsine", "EM.alg", "Freq.20th.quantile",
@@ -44,6 +213,9 @@ tab_failures %>%
   column_spec(11, background=spec_color(tab_failures$`0.9`, alpha=0.5))
 
 ##### Plot bias as function of matched samples #####
+
+# requires loading full results set (may exceed memory capacity)
+df_results_long <- readRDS(here("DataProcessed/all_2023-02-20.rds"))
 
 # Calculate simulated P(r > rho) for various values of m for each method
 # If r > rho, we'd expect SEs to be too low 
@@ -67,110 +239,30 @@ df_results_long %>%
        y="mBias",
        caption="mBias is the probability P(r > Rho)")
 
-# ggsave("~/Downloads/mBias.png", width=10, height=8)
 
+##### Adjusted (re-scaled) T statistic #####
 
-
-
-
-##### Reproduce Shiny App plots #####
-
-# plot bias as a function of true correlation
-df_performance %>%
-  filter(!(Method=="Max.conserv" & Bias < -1)) %>%
-  filter(Distribution==1, Delta==0, N==10,
-         Method %in% c("Rho.hat", "EM.alg", "Bayes.Jeffreys", "Pearson",
-                       "Freq.20th.quantile", "Max.conserv"),
-         Prop.matched %in% c(0, 0.1, 0.2, 0.3, 0.5, 1)) %>%
-  ggplot(aes(col=Method, x=Rho, y=Bias)) +
-  geom_hline(yintercept=0, linetype="dashed") +
-  facet_wrap(~ M, scales="free_y") +
-  geom_line() +
-  geom_point() +
-  scale_x_continuous(breaks=unique(df_performance$Rho)) +
-  labs(title="Bias of estimators by number of matched samples",
-       subtitle="Varied from 0 to 10 matched samples (n=10)",
-       x="True correlation",
-       y="Bias (Estimated minus true value)",
-       caption="Results averaged over 10,000 datasets at each point.")
-
-# plot MSE as a function of true correlation
-df_performance %>%
-  filter(!(Method=="Max.conserv" & Mean.sqd.error > 1)) %>%
-  filter(Distribution==1, Delta==0, N==10,
-         Method %in% c("Rho.hat", "EM.alg", "Bayes.Jeffreys", "Pearson",
-                       "Freq.20th.quantile", "Max.conserv"),
-         Prop.matched %in% c(0, 0.1, 0.2, 0.3, 0.5, 1)) %>%
-  ggplot(aes(col=Method, x=Rho, y=Mean.sqd.error)) +
-  facet_wrap(~ M, scales="free_y") +
-  geom_line() +
-  geom_point() +
-  scale_x_continuous(breaks=unique(df_performance$Rho)) +
-  labs(title="MSE of estimators by number of matched samples",
-       subtitle="Varied from 0 to 10 matched samples (n=10)",
-       x="True correlation",
-       caption="Results averaged over 10,000 datasets at each point.")
-
-# plot association with between any two estimators
-df_results_long %>%
-  filter(Distribution==1, Delta==0, N==10,
-         Method %in% c("Rho.hat", "EM.alg"),
-         Prop.matched %in% c(0, 0.1, 0.2, 0.3, 0.5, 1)) %>%
-  tidyr::pivot_wider(names_from=Method, values_from=Estimate) %>%
-  sample_frac(0.1) %>%
-  ggplot(aes(x=Rho.hat, y=EM.alg)) +
-  facet_wrap(~ M) +
-  geom_point(alpha=0.25) +
-  geom_smooth(method="lm", formula="y ~ x", se=F) +
-  geom_abline(intercept=0, slope=1, linetype="dashed") +
-  labs(title="Scatterplot of association between estimators",
-       subtitle="Varied from 0 to 10 matched samples (n=10)",
-       caption="Results sampled from 10,000 datasets for efficiency.")
-
-# plot Type-I error rate as function of correlation
+# compare rates of un-scaled T versus scaled T (using @Ryan's correction)
 df_inference %>%
-  filter(Distribution==1, Delta==0, N==10,
-         Method %in% c("Oracle", "Independent", "Pearson",
-                       "EM.alg", "Bayes.Jeffreys"),
-         Prop.matched %in% c(0, 0.1, 0.2, 0.3, 0.5, 1)) %>%
-  ggplot(aes(col=Method, x=Rho, y=Rejection.rate)) +
+  filter(Distribution==1,
+         Delta%in%c(0, 0.25),
+         N==20,
+         Method %in% c("Pearson", "Pearson.scaled"),
+         Prop.matched==0.2) %>%
+  ggplot(aes(shape=Method, x=Rho, y=Rejection.rate)) +
   geom_hline(yintercept=0.05, linetype="dashed") +
-  facet_wrap(~ M, scales="free_y") +
+  facet_wrap(~ Delta, scales="free_y") +
   geom_line() +
-  geom_point() +
-  scale_x_continuous(breaks=unique(df_inference$Rho)) +
-  labs(title="Type-I error rates by number of matched samples",
-       subtitle="Varied from 0 to 10 matched samples (n=10)",
+  geom_point(size=5) +
+  scale_x_continuous(breaks=unique(df_performance$Rho[df_performance$Distribution==1])) +
+  labs(title="Comparison of Type I error rate before/after scaling T statistic",
+       subtitle="Simulated with n=20, m=4",
        x="True correlation",
-       y="Type-I error (rejected null hypotheses)",
+       y="Prop. rejected null hypotheses",
        caption="Results averaged over 10,000 datasets at each point.")
 
+# requires loading full results set (may exceed memory capacity)
+df_stats <- readRDS(here("DataProcessed/stats_2023-02-20.rds"))
 
-# plot SE average as function of correlation
-df_inference %>%
-  filter(Distribution==1, Delta==0, N==10,
-         Method %in% c("Oracle", "Independent", "Pearson",
-                       "EM.alg", "Bayes.Jeffreys"),
-         Prop.matched %in% c(0, 0.1, 0.2, 0.3, 0.5, 1)) %>%
-  ggplot(aes(col=Method, x=Rho, y=SE.mean)) +
-  geom_hline(yintercept=0, linetype="dashed") +
-  facet_wrap(~ M, scales="free_y") +
-  geom_line() +
-  geom_point() +
-  scale_x_continuous(breaks=unique(df_inference$Rho)) +
-  labs(title="Standard error averages by number of matched samples",
-       subtitle="Varied from 0 to 10 matched samples (n=10)",
-       x="True correlation",
-       y="Standard Error (mean)",
-       caption="Results averaged over 10,000 datasets at each point.")
 
-# how to present this data in a table
-df_inference %>%
-  filter(Distribution==1, Delta==0, N==10,
-         Method %in% c("Oracle", "Independent", "Pearson",
-                       "EM.alg", "Bayes.Jeffreys"),
-         Prop.matched == 0.5) %>%
-  select(Delta, Method, Rho, N, M, SE.mean) %>%
-  tidyr::pivot_wider(names_prefix="Rho=", names_from=Rho, values_from=SE.mean) %>%
-  DT::datatable(options=list(pageLength=15, dom='tip'), caption="SE") %>%
-  DT::formatRound(columns=5:11)
+
