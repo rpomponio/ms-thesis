@@ -57,7 +57,6 @@ plot(rho_init, eff_rho_avg, type='l', xlim=c(-1, 1), ylim=c(-1, 1))
 lines(rho_init, rho_init, col='blue')
 title('Initial values of rho versus "effective correlation"')
 
-
 eff_rho_avg[rho_init==-0.9]
 eff_rho_avg[rho_init==-0.5]
 eff_rho_avg[rho_init==-0.25]
