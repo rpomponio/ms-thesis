@@ -25,15 +25,18 @@ fluidPage(
                   c(-0.9, -0.5, -0.25, 0, 0.25, 0.5, 0.9),
                   c(0.5)),
       selectizeInput("method", "Estimators",
-                     c("Rho.hat", "Pearson", "Max.conserv", "EM.alg",
-                       "Shrunken", "Unbiased", "Freq.20th.quantile",
+                     c("Rho.hat", "Pearson", "Pearson.mod",
+                       "Max.conserv", "EM.alg",
+                       "Shrunken", "Unbiased",
+                       "Freq.20th.quantile", "Freq.20th.quantile.mod",
                        "Bayes.arcsine", "Bayes.Jeffreys", "Bayes.unif"),
                      c("Pearson", "EM.alg", "Bayes.Jeffreys", "Freq.20th.quantile"),
                      multiple=T),
       wellPanel(
-        "SE/Power plot settings",
-        checkboxInput("plot.oracle", "Plot 'oracle' test", value=T),
-        checkboxInput("plot.indep", "Plot independent t-test", value=F)
+        "Power plot settings",
+        checkboxInput("plot.oracle", "Plot oracle t-test", value=T),
+        checkboxInput("plot.indep", "Plot independent t-test", value=F),
+        checkboxInput("plot.adjust", "Plot adjusted t-test", value=F)
       )
     ),
     mainPanel(
@@ -44,18 +47,20 @@ fluidPage(
           DT::dataTableOutput("failures"))),
         tabPanel("Bias", verticalLayout(
           plotOutput("biasplot", height="600px"),
-          # downloadButton("save", "Save plot"),
           DT::dataTableOutput("biastable"))),
+        tabPanel("Bias2", verticalLayout(
+          p("The following plot includes all values of matches samples under the null scenario."),
+          plotOutput("biasplot2", height="600px"))),
         tabPanel("MSE", verticalLayout(
-          plotOutput("varianceplot", height="600px"),
-          DT::dataTableOutput("variancetable"))),
+          plotOutput("mseplot", height="600px"),
+          DT::dataTableOutput("msetable"))),
         # tabPanel("Comparison", verticalLayout(
         #   p("Compares the first two estimators selected."),
         #   plotOutput("comparisonplot", height="600px"))),
-        tabPanel("SE", verticalLayout(
+        tabPanel("SE ratio", verticalLayout(
           plotOutput("seplot", height="600px"),
           DT::dataTableOutput("setable"))),
-        tabPanel("Power", verticalLayout(
+        tabPanel("Type I / Power", verticalLayout(
           plotOutput("powerplot", height="600px"),
           DT::dataTableOutput("powertable"))),
         tabPanel("Estimators", DT::dataTableOutput("methods"))

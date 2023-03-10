@@ -215,7 +215,7 @@ tab_failures %>%
 ##### Plot bias as function of matched samples #####
 
 # requires loading full results set (may exceed memory capacity)
-df_results_long <- readRDS(here("DataProcessed/all_2023-02-20.rds"))
+# df_results_long <- readRDS(here("DataProcessed/all_2023-02-20.rds"))
 
 # Calculate simulated P(r > rho) for various values of m for each method
 # If r > rho, we'd expect SEs to be too low 
@@ -261,8 +261,22 @@ df_inference %>%
        y="Prop. rejected null hypotheses",
        caption="Results averaged over 10,000 datasets at each point.")
 
-# requires loading full results set (may exceed memory capacity)
+# requires loading set of stats
 df_stats <- readRDS(here("DataProcessed/stats_2023-02-20.rds"))
+df_stats_wide <- df_stats %>%
+  select(-c(Estimate:t.ind)) %>%
+  tidyr::pivot_wider(id_cols=c(Repetition:Sigma.sqd.hat.Y),
+                     names_from=Method,
+                     values_from=c(t.mod, p.value))
 
+df_stats_wide %>%
+  filter(Delta==0) %>%
+  ggplot(aes(x=t.mod_Pearson, y=t.mod_Pearson.scaled)) +
+  facet_wrap(~ Rho) +
+  geom_point()
 
-
+df_stats_wide %>%
+  filter(Delta==0) %>%
+  ggplot(aes(x=p.value_Pearson, y=p.value_Pearson.scaled)) +
+  facet_wrap(~ Rho) +
+  geom_point()

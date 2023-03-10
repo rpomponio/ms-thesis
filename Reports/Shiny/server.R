@@ -30,6 +30,11 @@ function(input, output, session) {
     vals$prop.matched <- as.numeric(gsub("%", "", input$perc.matched)) / 100
     vals$n.matched <- floor(
       (as.numeric(gsub("%", "", input$perc.matched)) / 100) * as.numeric(input$n))
+    vals$rho.unique <- round(
+      unique(
+        df_performance$Rho[
+          df_performance$Distribution==ifelse(input$distribution=="Normal", 1, 2)]),
+      2)
   })
   
   output$n.matched <- renderText({
@@ -75,7 +80,6 @@ function(input, output, session) {
     df_failures %>%
       filter(Distribution==ifelse(input$distribution=="Normal", 1, 2),
              Delta %in% as.numeric(input$delta),
-             Rho == as.numeric(input$rho),
              N == as.numeric(input$n),
              Method %in% input$method,
              Prop.matched == vals$prop.matched) %>%
@@ -93,12 +97,14 @@ function(input, output, session) {
              N == as.numeric(input$n),
              Method %in% input$method,
              Prop.matched == vals$prop.matched) %>%
+      mutate(lower=Bias-Bias.mce, upper=Bias+Bias.mce) %>%
       ggplot(aes(col=Method, x=Rho, y=Bias)) +
       geom_hline(yintercept=0, linetype="dashed") +
       facet_wrap(~ Delta, scales="free_y") +
       geom_line() +
+      geom_errorbar(aes(ymin=lower, ymax=upper), width=0.05, alpha=0.25) +
       geom_point(size=5) +
-      scale_x_continuous(breaks=unique(df_performance$Rho)) +
+      scale_x_continuous(breaks=vals$rho.unique) +
       labs(title="Bias of estimators by true correlation",
            subtitle=sim_note,
            x="True correlation",
@@ -121,7 +127,29 @@ function(input, output, session) {
       DT::formatRound(columns=5:11, digits=3)
   })
   
-  output$varianceplot <- renderPlot({
+  output$biasplot2 <- renderPlot({
+    
+    sim_note <- paste0("Simulated with n=")
+    
+    df_performance %>%
+      filter(Distribution==ifelse(input$distribution=="Normal", 1, 2),
+             Delta == 0,
+             N == as.numeric(input$n),
+             Method %in% input$method) %>%
+      mutate(Rho = round(Rho, 2)) %>%
+      ggplot(aes(col=Method, x=M, y=Bias)) +
+      geom_hline(yintercept=0, linetype="dashed") +
+      facet_wrap(~ Rho) +
+      geom_line() +
+      geom_point(size=2) +
+      labs(title="Bias of estimators by number of matched samples",
+           subtitle="Number of matched samples",
+           x="Number of matched samples",
+           y="Bias (Estimated minus true value)",
+           caption="Results averaged over 10,000 datasets at each point.")
+  })
+  
+  output$mseplot <- renderPlot({
     
     sim_note <- paste0("Simulated with n=", as.numeric(input$n),
                        ", m=", vals$n.matched)
@@ -132,12 +160,16 @@ function(input, output, session) {
              N == as.numeric(input$n),
              Method %in% input$method,
              Prop.matched == vals$prop.matched) %>%
+      mutate(
+        lower=Mean.sqd.error-Mean.sqd.error.mce,
+        upper=Mean.sqd.error+Mean.sqd.error.mce) %>%
       ggplot(aes(col=Method, x=Rho, y=Mean.sqd.error)) +
       geom_hline(yintercept=0, linetype="dashed") +
       facet_wrap(~ Delta, scales="free_y") +
       geom_line() +
+      geom_errorbar(aes(ymin=lower, ymax=upper), width=0.05, alpha=0.25) +
       geom_point(size=5) +
-      scale_x_continuous(breaks=unique(df_performance$Rho)) +
+      scale_x_continuous(breaks=vals$rho.unique) +
       labs(title="MSE of estimators by true correlation",
            subtitle=sim_note,
            x="True correlation",
@@ -145,7 +177,7 @@ function(input, output, session) {
            caption="Results averaged over 10,000 datasets at each point.")
   })
   
-  output$variancetable <- DT::renderDataTable({
+  output$msetable <- DT::renderDataTable({
     
     df_performance %>%
       filter(Distribution==ifelse(input$distribution=="Normal", 1, 2),
@@ -162,13 +194,14 @@ function(input, output, session) {
   
   output$seplot <- renderPlot({
     
-    addl.methods <- c()
-    if (input$plot.oracle) {
-      addl.methods <- c(addl.methods, "Oracle")
-    }
-    if (input$plot.indep) {
-      addl.methods <- c(addl.methods, "Independent")
-    }
+    df_oracle <- df_inference %>%
+      filter(Distribution==ifelse(input$distribution=="Normal", 1, 2),
+             Delta %in% as.numeric(input$delta),
+             N == as.numeric(input$n),
+             Method=="Oracle",
+             Prop.matched == vals$prop.matched) %>%
+      rename(SE.mean.oracle=SE.mean, Rejection.rate.oracle=Rejection.rate) %>%
+      select(Distribution:M, SE.mean.oracle, Rejection.rate.oracle)
     
     sim_note <- paste0("Simulated with n=", as.numeric(input$n),
                        ", m=", vals$n.matched)
@@ -177,36 +210,30 @@ function(input, output, session) {
       filter(Distribution==ifelse(input$distribution=="Normal", 1, 2),
              Delta %in% as.numeric(input$delta),
              N == as.numeric(input$n),
-             Method %in% c(addl.methods, input$method),
+             Method %in% input$method,
              Prop.matched == vals$prop.matched) %>%
-      ggplot(aes(col=Method, x=Rho, y=SE.mean)) +
-      geom_hline(yintercept=0, linetype="dashed") +
+      left_join(df_oracle) %>%
+      mutate(SE.mean.ratio=SE.mean / SE.mean.oracle) %>%
+      ggplot(aes(col=Method, x=Rho, y=SE.mean.ratio)) +
+      geom_hline(yintercept=1, linetype="dashed") +
       facet_wrap(~ Delta, scales="free_y") +
       geom_line() +
       geom_point(size=5) +
-      scale_x_continuous(breaks=unique(df_inference$Rho)) +
-      labs(title="Avgerage standard errors by true correlation",
+      scale_x_continuous(breaks=vals$rho.unique) +
+      labs(title="Ratio of SE : Oracle SE by true correlation",
            subtitle=sim_note,
            x="True correlation",
-           y="Standard Error",
+           y="Standard Error Ratio",
            caption="Results averaged over 10,000 datasets at each point.")
   })
   
   output$setable <- DT::renderDataTable({
     
-    addl.methods <- c()
-    if (input$plot.oracle) {
-      addl.methods <- c(addl.methods, "Oracle")
-    }
-    if (input$plot.indep) {
-      addl.methods <- c(addl.methods, "Independent")
-    }
-    
     df_inference %>%
       filter(Distribution==ifelse(input$distribution=="Normal", 1, 2),
              Delta %in% as.numeric(input$delta),
              N == as.numeric(input$n),
-             Method %in% c(addl.methods, input$method),
+             Method %in% c("Oracle", "Independent", input$method),
              Prop.matched == vals$prop.matched) %>%
       select(Delta, Method, Rho, N, M, SE.mean) %>%
       tidyr::pivot_wider(names_from=Rho, values_from=SE.mean) %>%
@@ -224,6 +251,9 @@ function(input, output, session) {
     if (input$plot.indep) {
       addl.methods <- c(addl.methods, "Independent")
     }
+    if (input$plot.adjust) {
+      addl.methods <- c(addl.methods, "Pearson.scaled")
+    }
     
     sim_note <- paste0("Simulated with n=", as.numeric(input$n),
                        ", m=", vals$n.matched)
@@ -239,7 +269,7 @@ function(input, output, session) {
       facet_wrap(~ Delta, scales="free_y") +
       geom_line() +
       geom_point(size=5) +
-      scale_x_continuous(breaks=unique(df_inference$Rho)) +
+      scale_x_continuous(breaks=vals$rho.unique) +
       labs(title="Rejection rate of hypoth. tests by true correlation",
            subtitle=sim_note,
            x="True correlation",
@@ -249,19 +279,11 @@ function(input, output, session) {
   
   output$powertable <- DT::renderDataTable({
     
-    addl.methods <- c()
-    if (input$plot.oracle) {
-      addl.methods <- c(addl.methods, "Oracle")
-    }
-    if (input$plot.indep) {
-      addl.methods <- c(addl.methods, "Independent")
-    }
-    
     df_inference %>%
       filter(Distribution==ifelse(input$distribution=="Normal", 1, 2),
              Delta %in% as.numeric(input$delta),
              N == as.numeric(input$n),
-             Method %in% c(addl.methods, input$method),
+             Method %in% c("Oracle", "Independent", input$method),
              Prop.matched == vals$prop.matched) %>%
       select(Delta, Method, Rho, N, M, Rejection.rate) %>%
       tidyr::pivot_wider(names_from=Rho, values_from=Rejection.rate) %>%
